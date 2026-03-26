@@ -129,8 +129,8 @@ func (s *videoTriggerGenericService) monitorMotion() {
 					s.logger.Infof("motion detected (score=%.2f, threshold=%.2f), triggering video save", c.Score(), s.cfg.Threshold)
 					now := time.Now()
 					padding := time.Duration(s.cfg.CapturePaddingSecs * float64(time.Second))
-					start := now.Add(-padding).UTC().Format(time.RFC3339)
-					end := now.Add(padding).UTC().Format(time.RFC3339)
+					start := now.Add(-padding).UTC().Format("2006-01-02_15-04-05")
+					end := now.Add(padding).UTC().Format("2006-01-02_15-04-05")
 					if _, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "save", "from": start, "to": end}); err != nil {
 						s.logger.Warnf("failed to send DoCommand to video service: %v", err)
 					}
