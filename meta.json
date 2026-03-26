@@ -2,7 +2,7 @@
   "$schema": "https://dl.viam.dev/module.schema.json",
   "module_id": "devin-hilly:video-trigger",
   "visibility": "private",
-  "url": "",
+  "url": "https://github.com/dmhilly/video-trigger",
   "description": "Modular generic service: generic_service",
   "applications": null,
   "markdown_link": "README.md",
