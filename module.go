@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	generic "go.viam.com/rdk/services/generic"
+	"go.viam.com/rdk/services/vision"
 )
 
 var (
@@ -24,20 +27,11 @@ func init() {
 }
 
 type Config struct {
-	/*
-		Put config attributes here. There should be public/exported fields
-		with a `json` parameter at the end of each attribute.
-
-		Example config struct:
-			type Config struct {
-				Pin   string `json:"pin"`
-				Board string `json:"board"`
-				MinDeg *float64 `json:"min_angle_deg,omitempty"`
-			}
-
-		If your model does not need a config, replace *Config in the init
-		function with resource.NoNativeConfig
-	*/
+	VisionService      string  `json:"vision_service"`
+	VideoService       string  `json:"video_service"`
+	Camera             string  `json:"camera"`
+	Threshold          float64 `json:"threshold"`
+	CapturePaddingSecs float64 `json:"capture_padding_secs"` // seconds of video to include before and after the motion event
 }
 
 // Validate ensures all parts of the config are valid and important fields exist.
@@ -51,8 +45,16 @@ type Config struct {
 // (for example, "components.0"). You can use it in error messages
 // to indicate which resource has a problem.
 func (cfg *Config) Validate(path string) ([]string, []string, error) {
-	// Add config validation code here
-	return nil, nil, nil
+	if cfg.VisionService == "" {
+		return nil, nil, fmt.Errorf("%s: vision_service is required", path)
+	}
+	if cfg.VideoService == "" {
+		return nil, nil, fmt.Errorf("%s: video_service is required", path)
+	}
+	if cfg.Camera == "" {
+		return nil, nil, fmt.Errorf("%s: camera is required", path)
+	}
+	return []string{cfg.VisionService, cfg.VideoService}, nil, nil
 }
 
 type videoTriggerGenericService struct {
@@ -60,8 +62,10 @@ type videoTriggerGenericService struct {
 
 	name resource.Name
 
-	logger logging.Logger
-	cfg    *Config
+	logger    logging.Logger
+	cfg       *Config
+	visionSvc vision.Service
+	videoSvc  camera.Camera
 
 	cancelCtx  context.Context
 	cancelFunc func()
@@ -74,10 +78,18 @@ func newVideoTriggerGenericService(ctx context.Context, deps resource.Dependenci
 	}
 
 	return NewGenericService(ctx, deps, rawConf.ResourceName(), conf, logger)
-
 }
 
 func NewGenericService(ctx context.Context, deps resource.Dependencies, name resource.Name, conf *Config, logger logging.Logger) (resource.Resource, error) {
+	visionSvc, err := vision.FromDependencies(deps, conf.VisionService)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vision service %q: %w", conf.VisionService, err)
+	}
+
+	videoSvc, err := camera.FromDependencies(deps, conf.VideoService)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get video service %q: %w", conf.VideoService, err)
+	}
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 
@@ -85,10 +97,48 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 		name:       name,
 		logger:     logger,
 		cfg:        conf,
+		visionSvc:  visionSvc,
+		videoSvc:   videoSvc,
 		cancelCtx:  cancelCtx,
 		cancelFunc: cancelFunc,
 	}
+
+	go s.monitorMotion()
+
 	return s, nil
+}
+
+func (s *videoTriggerGenericService) monitorMotion() {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-s.cancelCtx.Done():
+			return
+		case <-ticker.C:
+			// The viam:vision:motion-detector classifier returns a "motion" label
+			// with a confidence score when motion is detected.
+			classifications, err := s.visionSvc.ClassificationsFromCamera(s.cancelCtx, s.cfg.Camera, 1, nil)
+			if err != nil {
+				s.logger.Warnf("failed to get classifications from vision service: %v", err)
+				continue
+			}
+			for _, c := range classifications {
+				if c.Label() == "motion" && c.Score() >= s.cfg.Threshold {
+					s.logger.Infof("motion detected (score=%.2f, threshold=%.2f), triggering video save", c.Score(), s.cfg.Threshold)
+					now := time.Now()
+					padding := time.Duration(s.cfg.CapturePaddingSecs * float64(time.Second))
+					start := now.Add(-padding).UTC().Format(time.RFC3339)
+					end := now.Add(padding).UTC().Format(time.RFC3339)
+					if _, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "save", "from": start, "to": end}); err != nil {
+						s.logger.Warnf("failed to send DoCommand to video service: %v", err)
+					}
+					break
+				}
+			}
+		}
+	}
 }
 
 func (s *videoTriggerGenericService) Name() resource.Name {
@@ -100,7 +150,6 @@ func (s *videoTriggerGenericService) DoCommand(ctx context.Context, cmd map[stri
 }
 
 func (s *videoTriggerGenericService) Close(context.Context) error {
-	// Put close code here
 	s.cancelFunc()
 	return nil
 }
