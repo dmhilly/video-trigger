@@ -1,0 +1,13 @@
+{
+  "module_name": "video-trigger",
+  "visibility": "private",
+  "namespace": "devin-hilly",
+  "language": "go",
+  "resource_type": "service",
+  "resource_subtype": "generic",
+  "model_name": "generic_service",
+  "initialize_git": false,
+  "generator_version": "0.1.0",
+  "generated_on": "2026-03-26T16:31:29.609228Z",
+  "module_readme_link": "README.md"
+}
