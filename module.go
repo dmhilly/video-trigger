@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	generic "go.viam.com/rdk/services/generic"
+	"go.viam.com/rdk/services/video"
 	"go.viam.com/rdk/services/vision"
 )
 
@@ -65,7 +65,7 @@ type videoTriggerGenericService struct {
 	logger    logging.Logger
 	cfg       *Config
 	visionSvc vision.Service
-	videoSvc  camera.Camera
+	videoSvc  video.Service
 
 	cancelCtx  context.Context
 	cancelFunc func()
@@ -86,7 +86,7 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 		return nil, fmt.Errorf("failed to get vision service %q: %w", conf.VisionService, err)
 	}
 
-	videoSvc, err := camera.FromDependencies(deps, conf.VideoService)
+	videoSvc, err := video.FromDependencies(deps, conf.VideoService)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get video service %q: %w", conf.VideoService, err)
 	}
