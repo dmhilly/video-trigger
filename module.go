@@ -131,6 +131,7 @@ func (s *videoTriggerGenericService) monitorMotion() {
 					padding := time.Duration(s.cfg.CapturePaddingSecs * float64(time.Second))
 					start := now.Add(-padding).UTC().Format("2006-01-02_15-04-05")
 					end := now.Add(padding).UTC().Format("2006-01-02_15-04-05")
+					time.Sleep(padding)
 					if _, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "save", "from": start, "to": end}); err != nil {
 						s.logger.Warnf("failed to send DoCommand to video service: %v", err)
 					}
