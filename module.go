@@ -127,11 +127,15 @@ func (s *videoTriggerGenericService) monitorMotion() {
 			for _, c := range classifications {
 				if c.Label() == "motion" && c.Score() >= s.cfg.Threshold {
 					s.logger.Infof("motion detected (score=%.2f, threshold=%.2f), triggering video save", c.Score(), s.cfg.Threshold)
-					now := time.Now()
 					padding := time.Duration(s.cfg.CapturePaddingSecs * float64(time.Second))
-					start := now.Add(-padding).UTC().Format("2006-01-02_15-04-05")
-					end := now.Add(padding).UTC().Format("2006-01-02_15-04-05")
-					time.Sleep(padding + (30 * time.Second))
+					start := time.Now().Add(-padding).UTC().Format("2006-01-02_15-04-05")
+					time.Sleep(padding)
+					end := time.Now().UTC().Format("2006-01-02_15-04-05")
+					storage, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "get-storage-state"})
+					s.logger.Errorf("storage state: %v", storage)
+					s.logger.Errorf("storage state error: %v", err)
+					s.logger.Errorf("start time: %v", start)
+					s.logger.Errorf("end time: %v", end)
 					if _, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "save", "from": start, "to": end}); err != nil {
 						s.logger.Warnf("failed to send DoCommand to video service: %v", err)
 					}
