@@ -30,8 +30,9 @@ type Config struct {
 	VisionService      string  `json:"vision_service"`
 	VideoService       string  `json:"video_service"`
 	Camera             string  `json:"camera"`
+	TriggerLabel       string  `json:"trigger_label"` // detection label that triggers video capture (e.g. "red", "person")
 	Threshold          float64 `json:"threshold"`
-	CapturePaddingSecs float64 `json:"capture_padding_secs"` // seconds of video to include before and after the motion event
+	CapturePaddingSecs float64 `json:"capture_padding_secs"` // seconds of video to include before and after the trigger event
 }
 
 // Validate ensures all parts of the config are valid and important fields exist.
@@ -53,6 +54,9 @@ func (cfg *Config) Validate(path string) ([]string, []string, error) {
 	}
 	if cfg.Camera == "" {
 		return nil, nil, fmt.Errorf("%s: camera is required", path)
+	}
+	if cfg.TriggerLabel == "" {
+		return nil, nil, fmt.Errorf("%s: trigger_label is required", path)
 	}
 	return []string{cfg.VisionService, cfg.VideoService}, nil, nil
 }
@@ -103,12 +107,12 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 		cancelFunc: cancelFunc,
 	}
 
-	go s.monitorMotion()
+	go s.monitor()
 
 	return s, nil
 }
 
-func (s *videoTriggerGenericService) monitorMotion() {
+func (s *videoTriggerGenericService) monitor() {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -117,16 +121,14 @@ func (s *videoTriggerGenericService) monitorMotion() {
 		case <-s.cancelCtx.Done():
 			return
 		case <-ticker.C:
-			// The viam:vision:motion-detector classifier returns a "motion" label
-			// with a confidence score when motion is detected.
-			classifications, err := s.visionSvc.ClassificationsFromCamera(s.cancelCtx, s.cfg.Camera, 1, nil)
+			detections, err := s.visionSvc.DetectionsFromCamera(s.cancelCtx, s.cfg.Camera, nil)
 			if err != nil {
-				s.logger.Warnf("failed to get classifications from vision service: %v", err)
+				s.logger.Warnf("failed to get detections from vision service: %v", err)
 				continue
 			}
-			for _, c := range classifications {
-				if c.Label() == "motion" && c.Score() >= s.cfg.Threshold {
-					s.logger.Infof("motion detected (score=%.2f, threshold=%.2f), triggering video save", c.Score(), s.cfg.Threshold)
+			for _, d := range detections {
+				if d.Label() == s.cfg.TriggerLabel && d.Score() >= s.cfg.Threshold {
+					s.logger.Infof("%s detected (score=%.2f, threshold=%.2f), triggering video save", s.cfg.TriggerLabel, d.Score(), s.cfg.Threshold)
 					padding := time.Duration(s.cfg.CapturePaddingSecs * float64(time.Second))
 					start := time.Now().Add(-padding).UTC().Format("2006-01-02_15-04-05Z")
 					end := time.Now().Add(padding).UTC().Format("2006-01-02_15-04-05Z")
