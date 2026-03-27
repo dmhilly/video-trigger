@@ -1,10 +1,24 @@
 {
   "$schema": "https://dl.viam.dev/module.schema.json",
   "module_id": "devin-hilly:video-trigger",
-  "visibility": "private",
+  "visibility": "public",
   "url": "https://github.com/dmhilly/video-trigger",
-  "description": "Modular generic service: generic_service",
-  "applications": null,
+  "description": "Managing and saving videos based on different triggers",
+  "applications": [
+    {
+      "name": "video-trigger",
+      "type": "single_machine",
+      "entrypoint": "dist/index.html",
+      "fragmentIds": [],
+      "logoPath": "static/logo.png",
+      "customizations": {
+        "machinePicker": {
+          "heading": "Video Dashboard",
+          "subheading": "Sign in to see your videos and other data"
+        }
+      }
+    }
+  ],
   "markdown_link": "README.md",
   "entrypoint": "bin/video-trigger",
   "first_run": "",
@@ -12,11 +26,6 @@
     "build": "make module.tar.gz",
     "setup": "make setup",
     "path": "module.tar.gz",
-    "arch": [
-      "linux/amd64",
-      "linux/arm64",
-      "darwin/arm64",
-      "windows/amd64"
-    ]
+    "arch": ["linux/amd64", "linux/arm64", "darwin/arm64", "windows/amd64"]
   }
 }
