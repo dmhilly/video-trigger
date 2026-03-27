@@ -8,7 +8,7 @@
     {
       "name": "video-trigger",
       "type": "single_machine",
-      "entrypoint": "dist/index.html",
+      "entrypoint": "index.html",
       "fragmentIds": [],
       "logoPath": "static/logo.png",
       "customizations": {
