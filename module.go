@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
+	"go.viam.com/rdk/app"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	generic "go.viam.com/rdk/services/generic"
@@ -33,6 +35,7 @@ type Config struct {
 	TriggerLabel       string  `json:"trigger_label"` // detection label that triggers video capture (e.g. "red", "person")
 	Threshold          float64 `json:"threshold"`
 	CapturePaddingSecs float64 `json:"capture_padding_secs"` // seconds of video to include before and after the trigger event
+	UploadTabularData  bool    `json:"upload_tabular_data"`  // if true, upload each detection event to Viam's tabular data
 }
 
 // Validate ensures all parts of the config are valid and important fields exist.
@@ -66,10 +69,11 @@ type videoTriggerGenericService struct {
 
 	name resource.Name
 
-	logger    logging.Logger
-	cfg       *Config
-	visionSvc vision.Service
-	videoSvc  video.Service
+	logger     logging.Logger
+	cfg        *Config
+	visionSvc  vision.Service
+	videoSvc   video.Service
+	dataClient *app.DataClient
 
 	cancelCtx  context.Context
 	cancelFunc func()
@@ -97,12 +101,23 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 
+	var dataClient *app.DataClient
+	if conf.UploadTabularData {
+		viamClient, err := app.CreateViamClientFromEnvVars(ctx, nil, logger)
+		if err != nil {
+			logger.Warnf("failed to create Viam client for tabular data upload: %v", err)
+		} else {
+			dataClient = viamClient.DataClient()
+		}
+	}
+
 	s := &videoTriggerGenericService{
 		name:       name,
 		logger:     logger,
 		cfg:        conf,
 		visionSvc:  visionSvc,
 		videoSvc:   videoSvc,
+		dataClient: dataClient,
 		cancelCtx:  cancelCtx,
 		cancelFunc: cancelFunc,
 	}
@@ -115,6 +130,7 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 func (s *videoTriggerGenericService) monitor() {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
+	endWindow := time.Now()
 
 	for {
 		select {
@@ -128,18 +144,54 @@ func (s *videoTriggerGenericService) monitor() {
 			}
 			for _, d := range detections {
 				if d.Label() == s.cfg.TriggerLabel && d.Score() >= s.cfg.Threshold {
-					s.logger.Infof("%s detected (score=%.2f, threshold=%.2f), triggering video save", s.cfg.TriggerLabel, d.Score(), s.cfg.Threshold)
+					s.uploadDetection(d.Label(), d.Score())
+					if time.Now().Before(endWindow) {
+						break
+					}
 					padding := time.Duration(s.cfg.CapturePaddingSecs * float64(time.Second))
 					start := time.Now().Add(-padding).UTC().Format("2006-01-02_15-04-05Z")
-					end := time.Now().Add(padding).UTC().Format("2006-01-02_15-04-05Z")
-					time.Sleep(padding + (45 * time.Second))
-					if _, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "save", "from": start, "to": end}); err != nil {
-						s.logger.Warnf("failed to send DoCommand to video service: %v", err)
-					}
+					endWindow = time.Now().Add(padding).UTC()
+					end := endWindow.Format("2006-01-02_15-04-05Z")
+					go s.processEvent(start, end, padding)
 					break
 				}
 			}
 		}
+	}
+}
+
+func (s *videoTriggerGenericService) uploadDetection(label string, score float64) {
+	if s.dataClient == nil {
+		return
+	}
+	now := time.Now()
+	data := []map[string]interface{}{
+		{
+			"label":     label,
+			"score":     score,
+			"camera":    s.cfg.Camera,
+			"timestamp": now.UTC().Format(time.RFC3339),
+		},
+	}
+	times := [][2]time.Time{{now, now}}
+	if _, err := s.dataClient.TabularDataCaptureUpload(
+		s.cancelCtx,
+		data,
+		os.Getenv("VIAM_MACHINE_PART_ID"),
+		"rdk:component:sensor",
+		s.name.ShortName(),
+		"Readings",
+		times,
+		nil,
+	); err != nil {
+		s.logger.Warnf("failed to upload tabular data: %v", err)
+	}
+}
+
+func (s *videoTriggerGenericService) processEvent(start, end string, padding time.Duration) {
+	time.Sleep(padding + (45 * time.Second))
+	if _, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "save", "from": start, "to": end}); err != nil {
+		s.logger.Warnf("failed to send DoCommand to video service: %v", err)
 	}
 }
 
