@@ -1,5 +1,8 @@
 <script lang="ts">
   import * as VIAM from "@viamrobotics/sdk";
+  import MachineStatus from "./components/machine-status.svelte";
+  import Header from "./components/header.svelte";
+  import { Status } from "./lib/types";
 
   // Receive the credentials passed from main.ts
   let {
@@ -15,7 +18,8 @@
   } = $props();
 
   // Reactive state for the UI
-  let status = $state("Connecting...");
+  let status = $state(Status.Connecting);
+  let error = $state("");
   let machineName = $state("");
 
   // Connect to Viam when the component loads
@@ -31,17 +35,19 @@
       });
       const machine = await client.appClient.getRobot(machineId);
       machineName = machine?.name ?? "";
-      status = "Connected";
+      status = Status.Connected;
     } catch (err) {
-      status = `Error: ${err}`;
+      status = Status.Error;
+      error = `${err}`;
     }
   }
 
   connect();
 </script>
 
-<h1>Video Trigger Dashboard</h1>
-<p>Status: {status}</p>
-{#if machineName}
-  <p>Machine: {machineName}</p>
-{/if}
+<div class="p-4">
+  <div class="flex gap-4 items-center">
+    <Header text="Baby Dashboard" />
+    <MachineStatus name={machineName} {status} {error} />
+  </div>
+</div>
