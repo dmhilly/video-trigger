@@ -13,8 +13,8 @@
       "logoPath": "static/logo.png",
       "customizations": {
         "machinePicker": {
-          "heading": "Video Dashboard",
-          "subheading": "Sign in to see your videos and other data"
+          "heading": "Viam Baby Monitor",
+          "subheading": "Sign in to see your baby's sleep activity"
         }
       }
     }

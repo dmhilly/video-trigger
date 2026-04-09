@@ -30,7 +30,7 @@
         },
       });
       const machine = await client.appClient.getRobot(machineId);
-      machineName = machine.name;
+      machineName = machine?.name ?? "";
       status = "Connected";
     } catch (err) {
       status = `Error: ${err}`;
