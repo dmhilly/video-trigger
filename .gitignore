@@ -35,3 +35,5 @@ reload-*/
 
 # Node modules
 node_modules/
+
+static/

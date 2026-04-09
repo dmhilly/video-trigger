@@ -26,7 +26,8 @@ module.tar.gz: meta.json $(MODULE_BINARY)
 ifneq ($(VIAM_TARGET_OS), windows)
 	strip $(MODULE_BINARY)
 endif
-	tar czf $@ meta.json $(MODULE_BINARY)
+	npm run build
+	tar czf $@ meta.json $(MODULE_BINARY) static/
 
 module: test module.tar.gz
 
@@ -34,3 +35,4 @@ all: test module.tar.gz
 
 setup:
 	go mod tidy
+	npm install
