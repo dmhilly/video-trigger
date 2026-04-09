@@ -9,9 +9,11 @@
   "author": "<YOUR NAME>",
   "license": "ISC",
   "dependencies": {
+    "@tailwindcss/vite": "^4.2.2",
     "@viamrobotics/sdk": "^0.68.0",
     "js-cookie": "^3.0.5",
-    "svelte": "^5.55.2"
+    "svelte": "^5.55.2",
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",

@@ -2,6 +2,7 @@ import { mount } from "svelte";
 import App from "./App.svelte";
 import * as VIAM from "@viamrobotics/sdk";
 import Cookies from "js-cookie";
+import "./app.css";
 
 let apiKeyId = "";
 let apiKeySecret = "";
