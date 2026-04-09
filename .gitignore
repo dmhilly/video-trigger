@@ -37,3 +37,4 @@ reload-*/
 node_modules/
 
 static/
+.env.local

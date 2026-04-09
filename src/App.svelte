@@ -3,6 +3,7 @@
   import MachineStatus from "./components/machine-status.svelte";
   import Header from "./components/header.svelte";
   import { Status } from "./lib/types";
+  import Section from "./components/section.svelte";
 
   // Receive the credentials passed from main.ts
   let {
@@ -17,15 +18,15 @@
     host: string;
   } = $props();
 
-  // Reactive state for the UI
   let status = $state(Status.Connecting);
   let error = $state("");
   let machineName = $state("");
+  let robotClient = $state<VIAM.RobotClient | undefined>(undefined);
+  let cameraClient = $state<VIAM.CameraClient | undefined>(undefined);
 
-  // Connect to Viam when the component loads
   async function connect() {
     try {
-      const client = await VIAM.createViamClient({
+      const viamClient = await VIAM.createViamClient({
         serviceHost: "https://app.viam.com",
         credentials: {
           type: "api-key",
@@ -33,9 +34,15 @@
           authEntity: apiKeyId,
         },
       });
-      const machine = await client.appClient.getRobot(machineId);
+
+      const machine = await viamClient.appClient.getRobot(machineId);
       machineName = machine?.name ?? "";
+
+      // Connect directly to the machine (not the app API)
+      robotClient = await viamClient.connectToMachine({ host });
       status = Status.Connected;
+
+      cameraClient = new VIAM.CameraClient(robotClient, "cam");
     } catch (err) {
       status = Status.Error;
       error = `${err}`;
@@ -45,9 +52,13 @@
   connect();
 </script>
 
-<div class="p-4">
+<div class="p-8 flex flex-col gap-8">
   <div class="flex gap-4 items-center">
     <Header text="Baby Dashboard" />
     <MachineStatus name={machineName} {status} {error} />
   </div>
+
+  <Section title="Current:">
+    {#snippet content()}{/snippet}
+  </Section>
 </div>
