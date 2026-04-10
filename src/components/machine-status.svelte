@@ -9,10 +9,14 @@
   }
   const { name, status, error }: Props = $props();
 
-  const statusToVariant: Record<Status, "warning" | "success" | "error"> = {
+  const statusToVariant: Record<
+    Status,
+    "warning" | "success" | "error" | "neutral"
+  > = {
     [Status.Connecting]: "warning",
     [Status.Connected]: "success",
     [Status.Error]: "error",
+    [Status.Offline]: "neutral",
   };
 </script>
 

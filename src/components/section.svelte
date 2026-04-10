@@ -11,5 +11,7 @@
 
 <div class="flex flex-col gap-4 border p-4">
   <Header text={title} variant="secondary" />
-  {@render content()}
+  <div class="flex gap-2">
+    {@render content()}
+  </div>
 </div>
