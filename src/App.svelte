@@ -28,6 +28,8 @@
 
   async function connect() {
     try {
+      status = Status.Connecting;
+
       const viamClient = await VIAM.createViamClient({
         serviceHost: "https://app.viam.com",
         credentials: {
@@ -42,6 +44,7 @@
 
       if (machine?.onlineState === 2) {
         status = Status.Offline;
+        setTimeout(connect, 5000);
         return;
       }
 
@@ -49,13 +52,24 @@
       robotClient = await viamClient.connectToMachine({ host });
       status = Status.Connected;
 
+      robotClient?.on(VIAM.MachineConnectionEvent.DISCONNECTED, () => {
+        setTimeout(connect, 5000);
+        status = Status.Offline;
+      });
+
+      robotClient?.on(
+        VIAM.MachineConnectionEvent.CONNECTED,
+        () => (status = Status.Connected),
+      );
+
       streamClient = new VIAM.StreamClient(robotClient);
-      const mediaStream = await streamClient.getStream("tapo-camera");
+      const mediaStream = await streamClient.getStream("replay-camera");
 
       videoElement.srcObject = mediaStream;
     } catch (err) {
       status = Status.Error;
       error = `${err}`;
+      setTimeout(connect, 5000);
     }
   }
 
