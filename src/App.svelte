@@ -32,8 +32,12 @@
   let dataClient = $state<VIAM.DataClient | undefined>(undefined);
   let mediaStream = $state<MediaStream | undefined>(undefined);
 
-  let motionClassifications = $state<VIAM.Detection[]>([]);
   let awakeClassifications = $state<VIAM.Classification[]>([]);
+
+  let movementDetected = $state(false);
+  let lastMotionTime: Date | undefined = undefined;
+  let lastMotionLocal = $state("None");
+  const TWO_MINUTES = 2 * 60 * 1000;
 
   let pollInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -92,10 +96,23 @@
         if (polling) return;
         polling = true;
         try {
-          [motionClassifications, awakeClassifications] = await Promise.all([
+          const [motionResults, awakeResult] = await Promise.all([
             motionDetector.getClassificationsFromCamera(cameraName, 1),
-            awakeClassifier.getClassificationsFromCamera(cameraName, 2),
+            awakeClassifier.getClassificationsFromCamera(cameraName, 1),
           ]);
+          awakeClassifications = awakeResult;
+
+          if (motionResults.length > 0 && motionResults[0].confidence > 0.001) {
+            lastMotionTime = new Date();
+            lastMotionLocal = lastMotionTime.toLocaleString();
+            movementDetected = true;
+          } else if (
+            movementDetected &&
+            lastMotionTime &&
+            Date.now() - lastMotionTime.getTime() >= TWO_MINUTES
+          ) {
+            movementDetected = false;
+          }
         } catch (err) {
           console.error("Detection error:", err);
         } finally {
@@ -130,8 +147,9 @@
     {#if view === Views.Camera}
       <CameraFeedView
         {mediaStream}
-        {motionClassifications}
         {awakeClassifications}
+        {movementDetected}
+        {lastMotionLocal}
       />
     {:else if view === Views.Info}
       <p>Coming soon!</p>

@@ -48,7 +48,6 @@
         loaded: false,
       })),
     );
-    console.log(videos);
   }
 
   loadVideos();
