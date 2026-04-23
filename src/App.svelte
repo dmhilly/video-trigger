@@ -8,6 +8,7 @@
   import { Views } from "./components/views/views";
   import ViewsTabSection from "./components/views/views-tab-section.svelte";
   import { Status } from "./lib/types";
+  import type { Video } from "./components/views/video";
 
   // Receive the credentials passed from main.ts
   let {
@@ -39,7 +40,15 @@
   let lastMotionLocal = $state("None");
   const TWO_MINUTES = 2 * 60 * 1000;
 
+  const maxVideoCount = 50;
+  let videos = $state<Video[]>([]);
+
   let pollInterval: ReturnType<typeof setInterval> | undefined;
+
+  const filter = new VIAM.dataApi.Filter({
+    mimeType: ["video/mp4"],
+    tagsFilter: { tags: ["awake"] },
+  });
 
   async function connect() {
     try {
@@ -53,7 +62,23 @@
           authEntity: apiKeyId,
         },
       });
+
       dataClient = viamClient.dataClient;
+      const { data } = await dataClient.binaryDataByFilter(
+        filter,
+        maxVideoCount,
+        VIAM.dataApi.Order.DESCENDING,
+        undefined,
+        false,
+      );
+      videos = data.map((item) => ({
+        name: item.metadata?.fileName,
+        binaryDataId: item.metadata?.binaryDataId ?? "",
+        url: undefined,
+        timestamp: item.metadata?.timeRequested,
+        size: item.metadata?.fileSizeBytes,
+        loaded: false,
+      }));
 
       const machine = await viamClient.appClient.getRobot(machineId);
       machineName = machine?.name ?? "";
@@ -154,7 +179,7 @@
     {:else if view === Views.Info}
       <p>Coming soon!</p>
     {:else if view === Views.Videos}
-      <VideosView {dataClient} />
+      <VideosView {dataClient} {videos} {maxVideoCount} />
     {/if}
   </div>
 </div>

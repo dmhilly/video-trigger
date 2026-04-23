@@ -4,51 +4,19 @@
   import Button from "../button.svelte";
   import { formatFileSize } from "../../lib/helpers";
   import Section from "../section.svelte";
-
-  interface Video {
-    name: string | undefined;
-    binaryDataId: string;
-    url: string | undefined;
-    timestamp: VIAM.Timestamp | undefined;
-    size: bigint | undefined;
-    loaded: boolean;
-  }
+  import type { Video } from "./video";
 
   interface Props {
     dataClient: VIAM.DataClient | undefined;
+    videos: Video[];
+    maxVideoCount: number;
   }
-  const { dataClient }: Props = $props();
+  const { dataClient, videos, maxVideoCount }: Props = $props();
 
-  const maxCount = 50;
-
-  let videos = $state<Video[]>([]);
   let videoCount = $state(0);
 
   async function loadVideos() {
     if (!dataClient) return;
-
-    const filter = new VIAM.dataApi.Filter({
-      mimeType: ["video/mp4"],
-      tagsFilter: { tags: ["awake"] },
-    });
-
-    const { data, count } = await dataClient.binaryDataByFilter(
-      filter,
-      maxCount,
-      VIAM.dataApi.Order.DESCENDING,
-      undefined,
-      false,
-    );
-    videoCount = Number(count);
-
-    videos = data.map((item) => ({
-      name: item.metadata?.fileName,
-      binaryDataId: item.metadata?.binaryDataId ?? "",
-      url: undefined,
-      timestamp: item.metadata?.timeRequested,
-      size: item.metadata?.fileSizeBytes,
-      loaded: false,
-    }));
   }
 
   async function loadVideo(video: Video) {
@@ -112,9 +80,9 @@
         {/if}
       </div>
     {/each}
-    {#if videoCount === maxCount}
+    {#if videoCount === maxVideoCount}
       <div class="bg-gray border rounded-xl py-3 px-8 self-center">
-        <span>Max number of videos ({maxCount}) shown</span>
+        <span>Max number of videos ({maxVideoCount}) shown</span>
       </div>
     {/if}
   </div>
