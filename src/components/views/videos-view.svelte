@@ -52,7 +52,7 @@
 </script>
 
 {#if dataClient}
-  <span>found {videoCount} video{videoCount === "1" ? "" : "s"}</span>
+  <span>Found {videoCount} video{videoCount === "1" ? "" : "s"}</span>
   <div class="flex flex-col gap-4">
     {#each videos as video}
       <div class="flex flex-col gap-4 border rounded-xl p-4 items-start">
@@ -65,6 +65,12 @@
         </div>
         {#if video.loaded}
           <div class="flex flex-col gap-1">
+            <Button
+              text="Close"
+              icon="close"
+              onclick={() => (video.loaded = false)}
+              class="self-end"
+            />
             <video
               src={video.url}
               controls
@@ -75,11 +81,6 @@
             >
               <track kind="captions" />
             </video>
-            <Button
-              text="Close"
-              onclick={() => (video.loaded = false)}
-              class="self-end"
-            />
           </div>
         {:else}
           <Button

@@ -118,7 +118,7 @@
   };
 </script>
 
-<div class="p-8 flex flex-col gap-8">
+<div class="p-8 mx-auto flex flex-col gap-8 max-w-228">
   <div class="flex gap-4 items-center justify-between">
     <Header text="Baby Dashboard" />
     <MachineStatus name={machineName} {status} {error} />
