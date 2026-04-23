@@ -22,4 +22,10 @@
     selected={selected === Views.Test}
     onclick={() => onselect(Views.Test)}
   />
+  <ViewTab
+    text="videos"
+    icon="video"
+    selected={selected === Views.Videos}
+    onclick={() => onselect(Views.Videos)}
+  />
 </div>

@@ -4,6 +4,7 @@
   import Header from "./components/header.svelte";
   import MachineStatus from "./components/machine-status.svelte";
   import CameraFeedView from "./components/views/camera-feed-view.svelte";
+  import VideosView from "./components/views/videos-view.svelte";
   import { Views } from "./components/views/views";
   import ViewsTabSection from "./components/views/views-tab-section.svelte";
   import { Status } from "./lib/types";
@@ -123,7 +124,11 @@
   <ViewsTabSection onselect={selectTab} selected={view} />
 
   {#if view === Views.Camera}
-    <CameraFeed {mediaStream} {motionClassifications} {awakeClassifications} />
+    <CameraFeedView
+      {mediaStream}
+      {motionClassifications}
+      {awakeClassifications}
+    />
   {:else if view === Views.Test}
     <p>Test View</p>
   {:else if view === Views.Videos}
