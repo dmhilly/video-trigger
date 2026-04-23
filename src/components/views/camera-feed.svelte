@@ -1,6 +1,6 @@
 <script lang="ts">
-  import InfoList from "../components/info-list.svelte";
-  import Section from "../components/section.svelte";
+  import InfoList from "../info-list.svelte";
+  import Section from "../section.svelte";
 
   interface Props {
     mediaStream: MediaStream | undefined;

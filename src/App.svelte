@@ -3,9 +3,9 @@
   import MachineStatus from "./components/machine-status.svelte";
   import Header from "./components/header.svelte";
   import { Status } from "./lib/types";
-  import CameraFeed from "./views/camera-feed.svelte";
-  import Tabs from "./components/tabs.svelte";
-  import Tab from "./components/tab.svelte";
+  import CameraFeed from "./components/views/camera-feed.svelte";
+  import ViewsTabSection from "./components/views/views-tab-section.svelte";
+  import { Views } from "./components/views/views";
 
   // Receive the credentials passed from main.ts
   let {
@@ -73,6 +73,12 @@
   }
 
   connect();
+
+  let view: Views = $state(Views.Camera);
+
+  const selectTab = (newView: Views) => {
+    view = newView;
+  };
 </script>
 
 <div class="p-8 flex flex-col gap-8">
@@ -81,7 +87,11 @@
     <MachineStatus name={machineName} {status} {error} />
   </div>
 
-  <Tabs />
+  <ViewsTabSection onselect={selectTab} selected={view} />
 
-  <CameraFeed {mediaStream} />
+  {#if view === Views.Camera}
+    <CameraFeed {mediaStream} />
+  {:else if view === Views.Test}
+    <p>Test View</p>
+  {/if}
 </div>

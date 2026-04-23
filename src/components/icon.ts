@@ -8,4 +8,5 @@ export type Icon = {
 
 export const IconByName: Record<string, Icon> = {
   camera: (IC as { icons: Record<string, Icon> }).icons["baseline-camera"],
+  info: (IC as { icons: Record<string, Icon> }).icons["round-info"],
 };
