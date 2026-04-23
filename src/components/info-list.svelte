@@ -7,6 +7,6 @@
 
 <div class="flex flex-col gap-2 flex-1">
   {#each Object.entries(items) as [key, value]}
-    <span>{key}: {value}</span>
+    <span><span class="font-semibold">{key}</span>: {value}</span>
   {/each}
 </div>

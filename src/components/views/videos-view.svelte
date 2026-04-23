@@ -3,6 +3,7 @@
 
   import Button from "../button.svelte";
   import { formatFileSize } from "../../lib/helpers";
+  import Section from "../section.svelte";
 
   interface Video {
     name: string | undefined;
@@ -31,7 +32,7 @@
     const { data, count } = await dataClient.binaryDataByFilter(
       filter,
       undefined,
-      undefined,
+      VIAM.dataApi.Order.DESCENDING,
       undefined,
       false,
     );
@@ -54,18 +55,24 @@
 </script>
 
 {#if dataClient}
-  <span>Found {videoCount} video{videoCount === "1" ? "" : "s"}</span>
+  <Section title="Wake Time Videos">
+    {#snippet content()}
+      Found {videoCount} video{videoCount === "1" ? "" : "s"}
+    {/snippet}
+  </Section>
   <div class="flex flex-col gap-4">
     {#each videos as video}
       <div
         class="flex flex-col bg-white gap-4 border rounded-xl p-4 items-start"
       >
         <div class="flex flex-col gap-1">
-          <span class="font-lg font-semibold">{video.name}</span>
           <span>
-            {video.timestamp?.toDate().toLocaleString()} ·
-            {formatFileSize(video.size)}
+            <span class="text-lg font-semibold">
+              {video.timestamp?.toDate().toLocaleString()}
+            </span>
+            · {formatFileSize(video.size)}
           </span>
+          <span>{video.name}</span>
         </div>
         {#if video.loaded}
           <div class="flex flex-col gap-1">
