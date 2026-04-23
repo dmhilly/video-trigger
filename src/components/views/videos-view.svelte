@@ -9,6 +9,7 @@
     url: string;
     timestamp: VIAM.Timestamp | undefined;
     size: bigint | undefined;
+    loaded: boolean;
   }
 
   interface Props {
@@ -41,6 +42,7 @@
         ),
         timestamp: item.metadata?.timeRequested,
         size: item.metadata?.fileSizeBytes,
+        loaded: false,
       })),
     );
     console.log(videos);
@@ -52,12 +54,40 @@
 {#if dataClient}
   <span>found {videoCount} video{videoCount === "1" ? "" : "s"}</span>
   <div class="flex flex-col gap-4">
-    {#each videos as { name, timestamp, size }}
-      <div class="flex flex-col gap-2 border rounded-xl p-4">
-        <span class="font-lg font-semibold">{name}</span>
-        <span>
-          {timestamp?.toDate().toLocaleString()} · {formatFileSize(size)}
-        </span>
+    {#each videos as video}
+      <div class="flex flex-col gap-4 border rounded-xl p-4 items-start">
+        <div class="flex flex-col gap-1">
+          <span class="font-lg font-semibold">{video.name}</span>
+          <span>
+            {video.timestamp?.toDate().toLocaleString()} ·
+            {formatFileSize(video.size)}
+          </span>
+        </div>
+        {#if video.loaded}
+          <div class="flex flex-col gap-1">
+            <video
+              src={video.url}
+              controls
+              class="w-full"
+              oncanplay={() => {
+                video.loaded = true;
+              }}
+            >
+              <track kind="captions" />
+            </video>
+            <Button
+              text="Close"
+              onclick={() => (video.loaded = false)}
+              class="self-end"
+            />
+          </div>
+        {:else}
+          <Button
+            text="Load video"
+            onclick={() => (video.loaded = true)}
+            class="items-end"
+          />
+        {/if}
       </div>
     {/each}
   </div>
