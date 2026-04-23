@@ -4,11 +4,12 @@
   import Header from "./components/header.svelte";
   import MachineStatus from "./components/machine-status.svelte";
   import CameraFeedView from "./components/views/camera-feed-view.svelte";
+  import InfoView from "./components/views/info-view.svelte";
+  import type { Video } from "./components/views/video";
   import VideosView from "./components/views/videos-view.svelte";
   import { Views } from "./components/views/views";
   import ViewsTabSection from "./components/views/views-tab-section.svelte";
   import { Status } from "./lib/types";
-  import type { Video } from "./components/views/video";
 
   // Receive the credentials passed from main.ts
   let {
@@ -42,6 +43,7 @@
 
   const maxVideoCount = 50;
   let videos = $state<Video[]>([]);
+  let wakeUpTimes = $state<Date[]>([]);
 
   let pollInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -79,6 +81,9 @@
         size: item.metadata?.fileSizeBytes,
         loaded: false,
       }));
+      wakeUpTimes = videos
+        .map((v) => v.timestamp?.toDate())
+        .filter((d): d is Date => d !== undefined);
 
       const machine = await viamClient.appClient.getRobot(machineId);
       machineName = machine?.name ?? "";
@@ -177,7 +182,7 @@
         {lastMotionLocal}
       />
     {:else if view === Views.Info}
-      <p>Coming soon!</p>
+      <InfoView {wakeUpTimes} />
     {:else if view === Views.Videos}
       <VideosView {dataClient} {videos} {maxVideoCount} />
     {/if}

@@ -1,10 +1,14 @@
 <script lang="ts">
   import * as VIAM from "@viamrobotics/sdk";
 
-  import Button from "../button.svelte";
-  import { formatFileSize } from "../../lib/helpers";
-  import Section from "../section.svelte";
   import type { Video } from "./video";
+  import Button from "../button.svelte";
+  import Section from "../section.svelte";
+  import {
+    formatFileSize,
+    toDateString,
+    toTimeString,
+  } from "../../lib/helpers";
 
   interface Props {
     dataClient: VIAM.DataClient | undefined;
@@ -46,7 +50,10 @@
         <div class="flex flex-col gap-1">
           <span>
             <span class="text-lg font-semibold">
-              {video.timestamp?.toDate().toLocaleString()}
+              {toDateString(video.timestamp?.toDate())} -
+              <span class="font-mono">
+                {toTimeString(video.timestamp?.toDate())}
+              </span>
             </span>
             · {formatFileSize(video.size)}
           </span>
