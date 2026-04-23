@@ -35,13 +35,12 @@
       items={{
         Status: babyStatus,
         "Last Awake": lastAwakeLocal,
-        "Noise Level": 0,
       }}
     />
   {/snippet}
 </Section>
 
-<Section title="Activity:">
+<Section title="Recent Activity:">
   {#snippet content()}
     <InfoList
       items={babyStatus === "asleep"

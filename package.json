@@ -9,6 +9,7 @@
   "author": "<YOUR NAME>",
   "license": "ISC",
   "dependencies": {
+    "@iconify-json/ic": "^1.2.4",
     "@tailwindcss/vite": "^4.2.2",
     "@viamrobotics/sdk": "^0.68.0",
     "js-cookie": "^3.0.5",

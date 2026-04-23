@@ -4,3 +4,10 @@ export enum Status {
   Error = "Error",
   Offline = "Offline",
 }
+
+export enum Size {
+  Small = "sm",
+  Medium = "md",
+  Large = "lg",
+  XLarge = "xl",
+}

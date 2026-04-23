@@ -3,9 +3,9 @@
   import MachineStatus from "./components/machine-status.svelte";
   import Header from "./components/header.svelte";
   import { Status } from "./lib/types";
-  import Section from "./components/section.svelte";
-  import InfoList from "./components/info-list.svelte";
   import CameraFeed from "./views/camera-feed.svelte";
+  import Tabs from "./components/tabs.svelte";
+  import Tab from "./components/tab.svelte";
 
   // Receive the credentials passed from main.ts
   let {
@@ -76,10 +76,12 @@
 </script>
 
 <div class="p-8 flex flex-col gap-8">
-  <div class="flex gap-4 items-center">
+  <div class="flex gap-4 items-center justify-between">
     <Header text="Baby Dashboard" />
     <MachineStatus name={machineName} {status} {error} />
   </div>
+
+  <Tabs />
 
   <CameraFeed {mediaStream} />
 </div>
