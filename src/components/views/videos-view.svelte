@@ -7,7 +7,8 @@
 
   interface Video {
     name: string | undefined;
-    url: string;
+    binaryDataId: string;
+    url: string | undefined;
     timestamp: VIAM.Timestamp | undefined;
     size: bigint | undefined;
     loaded: boolean;
@@ -18,8 +19,10 @@
   }
   const { dataClient }: Props = $props();
 
+  const maxCount = 50;
+
   let videos = $state<Video[]>([]);
-  let videoCount = $state("0");
+  let videoCount = $state(0);
 
   async function loadVideos() {
     if (!dataClient) return;
@@ -31,24 +34,31 @@
 
     const { data, count } = await dataClient.binaryDataByFilter(
       filter,
-      undefined,
+      maxCount,
       VIAM.dataApi.Order.DESCENDING,
       undefined,
       false,
     );
-    videoCount = count.toString();
+    videoCount = Number(count);
 
-    videos = await Promise.all(
-      data.map(async (item) => ({
-        name: item.metadata?.fileName,
-        url: await dataClient.createBinaryDataSignedURL(
-          item.metadata?.binaryDataId ?? "",
-        ),
-        timestamp: item.metadata?.timeRequested,
-        size: item.metadata?.fileSizeBytes,
-        loaded: false,
-      })),
-    );
+    videos = data.map((item) => ({
+      name: item.metadata?.fileName,
+      binaryDataId: item.metadata?.binaryDataId ?? "",
+      url: undefined,
+      timestamp: item.metadata?.timeRequested,
+      size: item.metadata?.fileSizeBytes,
+      loaded: false,
+    }));
+  }
+
+  async function loadVideo(video: Video) {
+    if (!dataClient) return;
+    if (!video.url) {
+      video.url = await dataClient.createBinaryDataSignedURL(
+        video.binaryDataId,
+      );
+    }
+    video.loaded = true;
   }
 
   loadVideos();
@@ -57,7 +67,7 @@
 {#if dataClient}
   <Section title="Wake Time Videos">
     {#snippet content()}
-      Found {videoCount} video{videoCount === "1" ? "" : "s"}
+      Found {videoCount} video{videoCount === 1 ? "" : "s"}
     {/snippet}
   </Section>
   <div class="flex flex-col gap-4">
@@ -74,7 +84,7 @@
           </span>
           <span>{video.name}</span>
         </div>
-        {#if video.loaded}
+        {#if video.loaded && video.url}
           <div class="flex flex-col gap-1">
             <Button
               text="Close"
@@ -96,11 +106,16 @@
         {:else}
           <Button
             text="Load video"
-            onclick={() => (video.loaded = true)}
+            onclick={() => loadVideo(video)}
             class="items-end"
           />
         {/if}
       </div>
     {/each}
+    {#if videoCount === maxCount}
+      <div class="bg-gray border rounded-xl py-3 px-8 self-center">
+        <span>Max number of videos ({maxCount}) shown</span>
+      </div>
+    {/if}
   </div>
 {/if}
