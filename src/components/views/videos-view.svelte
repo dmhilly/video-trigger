@@ -23,7 +23,10 @@
   async function loadVideos() {
     if (!dataClient) return;
 
-    const filter = new VIAM.dataApi.Filter({ mimeType: ["video/mp4"] });
+    const filter = new VIAM.dataApi.Filter({
+      mimeType: ["video/mp4"],
+      tagsFilter: { tags: ["awake"] },
+    });
 
     const { data, count } = await dataClient.binaryDataByFilter(
       filter,

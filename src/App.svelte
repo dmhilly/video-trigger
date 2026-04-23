@@ -132,8 +132,8 @@
       {motionClassifications}
       {awakeClassifications}
     />
-  {:else if view === Views.Test}
-    <p>Test View</p>
+  {:else if view === Views.Info}
+    <p>Coming soon!</p>
   {:else if view === Views.Videos}
     <VideosView {dataClient} />
   {/if}
