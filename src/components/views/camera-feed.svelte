@@ -6,10 +6,10 @@
 
   interface Props {
     mediaStream: MediaStream | undefined;
-    motionDetections: VIAM.Classification[];
+    motionClassifications: VIAM.Classification[];
     awakeClassifications: VIAM.Classification[];
   }
-  const { mediaStream, motionDetections, awakeClassifications }: Props =
+  const { mediaStream, motionClassifications, awakeClassifications }: Props =
     $props();
 
   let videoElement: HTMLVideoElement;
@@ -26,17 +26,18 @@
   const TWO_MINUTES = 2 * 60 * 1000;
 
   $effect(() => {
-    if (motionDetections.length > 0 && motionDetections[0].confidence > 0.001) {
+    if (
+      motionClassifications.length > 0 &&
+      motionClassifications[0].confidence > 0.001
+    ) {
       lastMotionTime = new Date();
       lastMotionLocal = lastMotionTime.toLocaleString();
-      console.log(lastMotionTime, motionDetections[0].confidence);
       moving = true;
     } else if (
       untrack(() => moving) &&
       lastMotionTime &&
       Date.now() - lastMotionTime.getTime() >= TWO_MINUTES
     ) {
-      console.log("two minutes since movement");
       moving = false;
     }
   });
@@ -47,10 +48,6 @@
     if (babyStatus.length > 0 && babyStatus[0].confidence > 0)
       console.log("awake: ", babyStatus);
   });
-
-  // TODO - replace with actual data
-  const lastAwake = new Date(2026, 3, 9, 19, 41, 0);
-  const lastAwakeLocal = lastAwake.toLocaleString();
 </script>
 
 <Section title="Camera feed:">
@@ -68,11 +65,5 @@
         "Last Motion": lastMotionLocal,
       }}
     />
-  {/snippet}
-</Section>
-
-<Section title="Recent Activity:">
-  {#snippet content()}
-    <InfoList items={{ "Fell Asleep at": lastAwakeLocal }} />
   {/snippet}
 </Section>

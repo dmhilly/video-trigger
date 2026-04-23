@@ -28,7 +28,7 @@
   let robotClient = $state<VIAM.RobotClient | undefined>(undefined);
   let streamClient = $state<VIAM.StreamClient | undefined>(undefined);
   let mediaStream = $state<MediaStream | undefined>(undefined);
-  let motionDetections = $state<VIAM.Detection[]>([]);
+  let motionClassifications = $state<VIAM.Detection[]>([]);
   let awakeClassifications = $state<VIAM.Classification[]>([]);
 
   let pollInterval: ReturnType<typeof setInterval> | undefined;
@@ -81,19 +81,22 @@
         "awake-classifier",
       );
 
+      let polling = false;
       if (pollInterval) clearInterval(pollInterval);
       pollInterval = setInterval(async () => {
+        if (polling) return;
+        polling = true;
         try {
-          motionDetections = await motionDetector.getClassificationsFromCamera(
-            cameraName,
-            1,
-          );
-          awakeClassifications =
-            await awakeClassifier.getClassificationsFromCamera(cameraName, 2);
+          [motionClassifications, awakeClassifications] = await Promise.all([
+            motionDetector.getClassificationsFromCamera(cameraName, 1),
+            awakeClassifier.getClassificationsFromCamera(cameraName, 2),
+          ]);
         } catch (err) {
           console.error("Detection error:", err);
+        } finally {
+          polling = false;
         }
-      }, 1000);
+      }, 500);
     } catch (err) {
       status = Status.Error;
       error = `${err}`;
@@ -119,7 +122,7 @@
   <ViewsTabSection onselect={selectTab} selected={view} />
 
   {#if view === Views.Camera}
-    <CameraFeed {mediaStream} {motionDetections} {awakeClassifications} />
+    <CameraFeed {mediaStream} {motionClassifications} {awakeClassifications} />
   {:else if view === Views.Test}
     <p>Test View</p>
   {/if}
