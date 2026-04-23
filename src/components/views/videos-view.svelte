@@ -1,3 +1,64 @@
-<script lang="ts"></script>
+<script lang="ts">
+  import * as VIAM from "@viamrobotics/sdk";
 
-<div class="flex flex-col gap-2"></div>
+  import Button from "../button.svelte";
+  import { formatFileSize } from "../../lib/helpers";
+
+  interface Video {
+    name: string | undefined;
+    url: string;
+    timestamp: VIAM.Timestamp | undefined;
+    size: bigint | undefined;
+  }
+
+  interface Props {
+    dataClient: VIAM.DataClient | undefined;
+  }
+  const { dataClient }: Props = $props();
+
+  let videos = $state<Video[]>([]);
+  let videoCount = $state("0");
+
+  async function loadVideos() {
+    if (!dataClient) return;
+
+    const filter = new VIAM.dataApi.Filter({ mimeType: ["video/mp4"] });
+
+    const { data, count } = await dataClient.binaryDataByFilter(
+      filter,
+      undefined,
+      undefined,
+      undefined,
+      false,
+    );
+    videoCount = count.toString();
+
+    videos = await Promise.all(
+      data.map(async (item) => ({
+        name: item.metadata?.fileName,
+        url: await dataClient.createBinaryDataSignedURL(
+          item.metadata?.binaryDataId ?? "",
+        ),
+        timestamp: item.metadata?.timeRequested,
+        size: item.metadata?.fileSizeBytes,
+      })),
+    );
+    console.log(videos);
+  }
+
+  loadVideos();
+</script>
+
+{#if dataClient}
+  <span>found {videoCount} video{videoCount === "1" ? "" : "s"}</span>
+  <div class="flex flex-col gap-4">
+    {#each videos as { name, timestamp, size }}
+      <div class="flex flex-col gap-2 border rounded-xl p-4">
+        <span class="font-lg font-semibold">{name}</span>
+        <span>
+          {timestamp?.toDate().toLocaleString()} · {formatFileSize(size)}
+        </span>
+      </div>
+    {/each}
+  </div>
+{/if}

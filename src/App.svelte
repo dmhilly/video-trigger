@@ -29,7 +29,9 @@
   let machineName = $state("");
   let robotClient = $state<VIAM.RobotClient | undefined>(undefined);
   let streamClient = $state<VIAM.StreamClient | undefined>(undefined);
+  let dataClient = $state<VIAM.DataClient | undefined>(undefined);
   let mediaStream = $state<MediaStream | undefined>(undefined);
+
   let motionClassifications = $state<VIAM.Detection[]>([]);
   let awakeClassifications = $state<VIAM.Classification[]>([]);
 
@@ -47,6 +49,7 @@
           authEntity: apiKeyId,
         },
       });
+      dataClient = viamClient.dataClient;
 
       const machine = await viamClient.appClient.getRobot(machineId);
       machineName = machine?.name ?? "";
@@ -132,6 +135,6 @@
   {:else if view === Views.Test}
     <p>Test View</p>
   {:else if view === Views.Videos}
-    <VideosView />
+    <VideosView {dataClient} />
   {/if}
 </div>
