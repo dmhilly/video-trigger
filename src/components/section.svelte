@@ -9,7 +9,7 @@
   const { title, content }: Props = $props();
 </script>
 
-<div class="flex flex-col gap-4 border p-4">
+<div class="flex flex-col gap-4 border p-4 bg-white rounded-xl">
   <Header text={title} variant="secondary" />
   <div class="flex gap-2">
     {@render content()}

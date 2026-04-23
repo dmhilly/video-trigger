@@ -118,23 +118,25 @@
   };
 </script>
 
-<div class="p-8 mx-auto flex flex-col gap-8 max-w-228">
-  <div class="flex gap-4 items-center justify-between">
-    <Header text="Baby Dashboard" />
-    <MachineStatus name={machineName} {status} {error} />
+<div class="min-h-screen bg-linear-to-b from-blue-50 to-pink-50">
+  <div class="p-8 mx-auto flex flex-col gap-8 max-w-228">
+    <div class="flex gap-4 items-center justify-between">
+      <Header text="Baby Dashboard" />
+      <MachineStatus name={machineName} {status} {error} />
+    </div>
+
+    <ViewsTabSection onselect={selectTab} selected={view} />
+
+    {#if view === Views.Camera}
+      <CameraFeedView
+        {mediaStream}
+        {motionClassifications}
+        {awakeClassifications}
+      />
+    {:else if view === Views.Info}
+      <p>Coming soon!</p>
+    {:else if view === Views.Videos}
+      <VideosView {dataClient} />
+    {/if}
   </div>
-
-  <ViewsTabSection onselect={selectTab} selected={view} />
-
-  {#if view === Views.Camera}
-    <CameraFeedView
-      {mediaStream}
-      {motionClassifications}
-      {awakeClassifications}
-    />
-  {:else if view === Views.Info}
-    <p>Coming soon!</p>
-  {:else if view === Views.Videos}
-    <VideosView {dataClient} />
-  {/if}
 </div>

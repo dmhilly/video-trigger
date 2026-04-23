@@ -58,7 +58,9 @@
   <span>Found {videoCount} video{videoCount === "1" ? "" : "s"}</span>
   <div class="flex flex-col gap-4">
     {#each videos as video}
-      <div class="flex flex-col gap-4 border rounded-xl p-4 items-start">
+      <div
+        class="flex flex-col bg-white gap-4 border rounded-xl p-4 items-start"
+      >
         <div class="flex flex-col gap-1">
           <span class="font-lg font-semibold">{video.name}</span>
           <span>
