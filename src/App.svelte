@@ -5,6 +5,7 @@
   import { Status } from "./lib/types";
   import Section from "./components/section.svelte";
   import InfoList from "./components/info-list.svelte";
+  import CameraFeed from "./views/camera-feed.svelte";
 
   // Receive the credentials passed from main.ts
   let {
@@ -24,7 +25,7 @@
   let machineName = $state("");
   let robotClient = $state<VIAM.RobotClient | undefined>(undefined);
   let streamClient = $state<VIAM.StreamClient | undefined>(undefined);
-  let videoElement: HTMLVideoElement;
+  let mediaStream = $state<MediaStream | undefined>(undefined);
 
   async function connect() {
     try {
@@ -63,9 +64,7 @@
       );
 
       streamClient = new VIAM.StreamClient(robotClient);
-      const mediaStream = await streamClient.getStream("replay-camera");
-
-      videoElement.srcObject = mediaStream;
+      mediaStream = await streamClient.getStream("replay-camera");
     } catch (err) {
       status = Status.Error;
       error = `${err}`;
@@ -74,14 +73,6 @@
   }
 
   connect();
-
-  // Example data
-  const babyStatus = $state<"awake" | "asleep">("awake");
-  const lastAwake = new Date(2026, 3, 9, 19, 41, 0);
-  const wokeUp = new Date(2026, 3, 10, 4, 20, 12);
-
-  const lastAwakeLocal = lastAwake.toLocaleString();
-  const wokeUpLocal = wokeUp.toLocaleString();
 </script>
 
 <div class="p-8 flex flex-col gap-8">
@@ -90,34 +81,5 @@
     <MachineStatus name={machineName} {status} {error} />
   </div>
 
-  <Section title="Camera feed:">
-    {#snippet content()}
-      <video
-        bind:this={videoElement}
-        autoplay
-        playsinline
-        muted
-        class="flex-1 min-w-0"
-      ></video>
-      <InfoList
-        items={{
-          Status: babyStatus,
-          "Last Awake": lastAwakeLocal,
-          "Noise Level": 0,
-        }}
-      />
-    {/snippet}
-  </Section>
-
-  <Section title="Activity:">
-    {#snippet content()}
-      <InfoList
-        items={babyStatus === "asleep"
-          ? {
-              "Fell Asleep at": lastAwakeLocal,
-            }
-          : { "Awoke at": wokeUpLocal }}
-      />
-    {/snippet}
-  </Section>
+  <CameraFeed {mediaStream} />
 </div>
