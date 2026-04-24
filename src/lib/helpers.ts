@@ -37,11 +37,21 @@ export function toTimeString(date: Date | undefined): string {
   });
 }
 
-export function addRemoveDay(date: Date, previous = false): Date {
-  const multiplier = previous ? -1 : 1;
+// basically
+export function get7PM(date: Date, dateChange: number = 0): Date {
   return new Date(
     date.getFullYear(),
     date.getMonth(),
-    date.getDate() + 1 * multiplier,
+    date.getDate() + dateChange,
+    19,
+  );
+}
+
+export function get7AM(date: Date, dateChange: number = 0): Date {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate() + dateChange,
+    7,
   );
 }
