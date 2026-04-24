@@ -17,7 +17,7 @@
   }
   const { dataClient, videos, maxVideoCount }: Props = $props();
 
-  let videoCount = $state(0);
+  let videoCount = $derived(videos.length);
 
   async function loadVideos() {
     if (!dataClient) return;
