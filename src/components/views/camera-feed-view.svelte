@@ -5,16 +5,12 @@
 
   interface Props {
     mediaStream: MediaStream | undefined;
-    awakeClassifications: VIAM.Classification[];
+    awakeData: VIAM.JsonValue;
     movementDetected: boolean;
     lastMotionLocal: Date | undefined;
   }
-  const {
-    mediaStream,
-    awakeClassifications,
-    movementDetected,
-    lastMotionLocal,
-  }: Props = $props();
+  const { mediaStream, awakeData, movementDetected, lastMotionLocal }: Props =
+    $props();
 
   let videoElement: HTMLVideoElement;
   $effect(() => {
@@ -27,12 +23,7 @@
       : "No motion detected",
   );
 
-  const babyStatus = $derived(awakeClassifications);
-  $effect(() => {
-    // TODO - remove when awake classifier works
-    if (babyStatus.length > 0 && babyStatus[0].confidence > 0)
-      console.log("awake: ", babyStatus);
-  });
+  const babyStatus = $derived(awakeData);
 </script>
 
 <Section title="Camera feed:">
@@ -46,8 +37,11 @@
     ></video>
     <InfoList
       items={{
+        "Is Awake": babyStatus["is_awake"],
         Activity: motionStatus,
         "Last Motion": lastMotionLocal,
+        "Eyes Detected": babyStatus["eyes_detected"],
+        "Sound Detected": babyStatus["sound_detected"],
       }}
     />
   {/snippet}

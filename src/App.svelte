@@ -34,7 +34,7 @@
   let dataClient = $state<VIAM.DataClient | undefined>(undefined);
   let mediaStream = $state<MediaStream | undefined>(undefined);
 
-  let awakeClassifications = $state<VIAM.Classification[]>([]);
+  let awakeData = $state<VIAM.JsonValue>({});
 
   let movementDetected = $state(false);
   let lastMotionTime: Date | undefined = undefined;
@@ -51,6 +51,23 @@
     mimeType: ["video/mp4"],
     tagsFilter: { tags: ["awake"] },
   });
+
+  const mqlQuery: Record<string, any>[] = [
+    {
+      $match: {
+        component_name: "awake_classifier",
+        component_type: "rdk:component:sensor",
+        method_name: "Readings",
+        "data.readings.is_awake": true,
+      },
+    },
+    {
+      $sort: { time_received: -1 },
+    },
+    {
+      $limit: 100,
+    },
+  ];
 
   async function connect() {
     try {
@@ -115,7 +132,7 @@
         robotClient,
         "motion-detector",
       );
-      const awakeClassifier = new VIAM.VisionClient(
+      const awakeClassifier = new VIAM.SensorClient(
         robotClient,
         "awake-classifier",
       );
@@ -128,9 +145,9 @@
         try {
           const [motionResults, awakeResult] = await Promise.all([
             motionDetector.getClassificationsFromCamera(cameraName, 1),
-            awakeClassifier.getClassificationsFromCamera(cameraName, 1),
+            awakeClassifier.getReadings(),
           ]);
-          awakeClassifications = awakeResult;
+          awakeData = awakeResult;
 
           if (motionResults.length > 0 && motionResults[0].confidence > 0.001) {
             lastMotionTime = new Date();
@@ -177,7 +194,7 @@
     {#if view === Views.Camera}
       <CameraFeedView
         {mediaStream}
-        {awakeClassifications}
+        {awakeData}
         {movementDetected}
         {lastMotionLocal}
       />
