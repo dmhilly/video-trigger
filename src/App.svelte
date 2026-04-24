@@ -38,7 +38,7 @@
 
   let movementDetected = $state(false);
   let lastMotionTime: Date | undefined = undefined;
-  let lastMotionLocal = $state("None");
+  let lastMotionLocal = $state<Date | undefined>(undefined);
   const TWO_MINUTES = 2 * 60 * 1000;
 
   const maxVideoCount = 50;
@@ -134,7 +134,7 @@
 
           if (motionResults.length > 0 && motionResults[0].confidence > 0.001) {
             lastMotionTime = new Date();
-            lastMotionLocal = lastMotionTime.toLocaleString();
+            lastMotionLocal = lastMotionTime;
             movementDetected = true;
           } else if (
             movementDetected &&
@@ -158,7 +158,7 @@
 
   connect();
 
-  let view: Views = $state(Views.Camera);
+  let view: Views = $state(Views.Info);
 
   const selectTab = (newView: Views) => {
     view = newView;

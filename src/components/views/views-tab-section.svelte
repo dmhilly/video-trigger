@@ -11,16 +11,16 @@
 
 <div class="flex gap-16 self-center">
   <ViewTab
-    text="camera"
-    icon="camera"
-    selected={selected === Views.Camera}
-    onclick={() => onselect(Views.Camera)}
-  />
-  <ViewTab
     text="Info"
     icon="info"
     selected={selected === Views.Info}
     onclick={() => onselect(Views.Info)}
+  />
+  <ViewTab
+    text="camera"
+    icon="camera"
+    selected={selected === Views.Camera}
+    onclick={() => onselect(Views.Camera)}
   />
   <ViewTab
     text="videos"

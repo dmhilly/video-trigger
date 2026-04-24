@@ -7,7 +7,7 @@
     mediaStream: MediaStream | undefined;
     awakeClassifications: VIAM.Classification[];
     movementDetected: boolean;
-    lastMotionLocal: string;
+    lastMotionLocal: Date | undefined;
   }
   const {
     mediaStream,

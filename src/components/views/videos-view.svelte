@@ -4,11 +4,8 @@
   import type { Video } from "./video";
   import Button from "../button.svelte";
   import Section from "../section.svelte";
-  import {
-    formatFileSize,
-    toDateString,
-    toTimeString,
-  } from "../../lib/helpers";
+  import { formatFileSize } from "../../lib/helpers";
+  import Datetime from "../datetime.svelte";
 
   interface Props {
     dataClient: VIAM.DataClient | undefined;
@@ -49,12 +46,10 @@
       >
         <div class="flex flex-col gap-1">
           <span>
-            <span class="text-lg font-semibold">
-              {toDateString(video.timestamp?.toDate())} -
-              <span class="font-mono">
-                {toTimeString(video.timestamp?.toDate())}
-              </span>
-            </span>
+            <Datetime
+              date={video.timestamp?.toDate()}
+              class="text-lg font-semibold"
+            />
             · {formatFileSize(video.size)}
           </span>
           <span>{video.name}</span>
