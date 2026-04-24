@@ -43,7 +43,7 @@
       }
       grouped[periodKey].events.push({
         start: date,
-        end: new Date(date.getTime() + 2 * 60 * 60),
+        end: new Date(date.getTime() + 15 * 60 * 60),
       });
     }
     return grouped;
@@ -55,7 +55,10 @@
 {/if}
 
 {#each Object.entries(wakeUpTimesByPeriod) as [name, period]}
-  <Section title={name}>
+  <Section
+    title={name}
+    class={name.includes("night") ? "bg-purple-100!" : "bg-yellow-50!"}
+  >
     {#snippet content()}
       <Timeline events={period.events} start={period.start} end={period.end} />
     {/snippet}

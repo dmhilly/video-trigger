@@ -37,7 +37,7 @@
     width={chartW}
     height={BAR_HEIGHT}
     rx="4"
-    fill="#1a1a2e"
+    class="fill-gray-500"
   />
 
   {#each events as event}
@@ -46,10 +46,10 @@
     <rect
       x={x1}
       y={BAR_Y}
-      width={x2 - x1}
+      width={Math.max(x2 - x1, 4)}
       height={BAR_HEIGHT}
       rx="2"
-      fill="#60a5fa"
+      class="fill-white hover:cursor-pointer"
     />
   {/each}
 
