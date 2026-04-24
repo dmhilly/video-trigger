@@ -199,7 +199,7 @@
         {lastMotionLocal}
       />
     {:else if view === Views.Info}
-      <InfoView {wakeUpTimes} />
+      <InfoView {dataClient} {wakeUpTimes} {videos} />
     {:else if view === Views.Videos}
       <VideosView {dataClient} {videos} {maxVideoCount} />
     {/if}

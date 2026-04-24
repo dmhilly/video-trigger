@@ -1,8 +1,10 @@
 <script lang="ts">
+  import type { DataClient } from "@viamrobotics/sdk";
   import Section from "../section.svelte";
   import { get7AM, get7PM, toDateString } from "../../lib/helpers";
   import Timeline from "./timeline.svelte";
   import type { WakeUpEvent } from "./times";
+  import type { Video } from "./video";
 
   interface WakeUpPeriod {
     events: WakeUpEvent[];
@@ -11,9 +13,11 @@
   }
 
   interface Props {
+    dataClient: DataClient | undefined;
     wakeUpTimes: Date[];
+    videos: Video[];
   }
-  const { wakeUpTimes }: Props = $props();
+  const { dataClient, wakeUpTimes, videos }: Props = $props();
 
   const wakeUpTimesByPeriod: Record<string, WakeUpPeriod> = $derived.by(() => {
     const grouped: Record<string, WakeUpPeriod> = {};
@@ -60,7 +64,13 @@
     class={name.includes("night") ? "bg-purple-100!" : "bg-yellow-50!"}
   >
     {#snippet content()}
-      <Timeline events={period.events} start={period.start} end={period.end} />
+      <Timeline
+        {dataClient}
+        events={period.events}
+        start={period.start}
+        end={period.end}
+        {videos}
+      />
     {/snippet}
   </Section>
 {/each}
