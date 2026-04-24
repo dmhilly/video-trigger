@@ -2,7 +2,7 @@
   import Datetime from "./datetime.svelte";
 
   interface Props {
-    items: Record<string, string | number | Date | undefined>;
+    items: Record<string, any>;
   }
   const { items }: Props = $props();
 </script>

@@ -23,7 +23,7 @@
       : "No motion detected",
   );
 
-  const babyStatus = $derived(awakeData);
+  const babyStatus = $derived(awakeData as Record<string, any>);
 </script>
 
 <Section title="Camera feed:">
