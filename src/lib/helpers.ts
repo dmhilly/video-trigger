@@ -36,3 +36,12 @@ export function toTimeString(date: Date | undefined): string {
     second: "2-digit",
   });
 }
+
+export function addRemoveDay(date: Date, previous = false): Date {
+  const multiplier = previous ? -1 : 1;
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate() + 1 * multiplier,
+  );
+}

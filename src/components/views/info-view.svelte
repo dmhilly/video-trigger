@@ -1,42 +1,46 @@
 <script lang="ts">
   import Section from "../section.svelte";
-  import { toDateString, toTimeString } from "../../lib/helpers";
+  import { addRemoveDay, toDateString } from "../../lib/helpers";
+  import Timeline from "./timeline.svelte";
 
   interface Props {
     wakeUpTimes: Date[];
   }
   const { wakeUpTimes }: Props = $props();
 
-  const wakeUpTimesByDate = $derived.by(() => {
-    const grouped: Record<string, string[]> = {};
+  const wakeUpTimesByPeriod = $derived.by(() => {
+    const grouped: Record<string, Date[]> = {};
     for (const date of wakeUpTimes) {
-      const dateKey = toDateString(date);
-      const timeValue = toTimeString(date);
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
+      const hour = date.getHours();
+      let periodKey: string;
+
+      if (hour < 7) {
+        const prevDay = addRemoveDay(date, true);
+        periodKey = `${toDateString(prevDay)} - ${toDateString(date)} night`;
+      } else if (hour < 19) {
+        periodKey = `${toDateString(date)} day`;
+      } else {
+        const nextDay = addRemoveDay(date);
+        periodKey = `${toDateString(date)} - ${toDateString(nextDay)} night`;
       }
-      grouped[dateKey].push(timeValue);
+
+      if (!grouped[periodKey]) {
+        grouped[periodKey] = [];
+      }
+      grouped[periodKey].push(date);
     }
     return grouped;
   });
 </script>
 
-<Section title="Wake Up Times">
-  {#snippet content()}
-    <div class="flex flex-col gap-4 w-full">
-      {#each Object.entries(wakeUpTimesByDate) as [date, times]}
-        <div class="flex gap-4">
-          <span class="text-lg w-40">{date}</span>
-          <ul class="flex flex-col gap-1 text-gray-700 font-mono">
-            {#each times as time}
-              <li>{time}</li>
-            {/each}
-          </ul>
-        </div>
-      {/each}
-      {#if Object.keys(wakeUpTimesByDate).length === 0}
-        <span>No wake up times recorded.</span>
-      {/if}
-    </div>
-  {/snippet}
-</Section>
+{#if Object.keys(wakeUpTimesByPeriod).length === 0}
+  <span>No wake up times recorded.</span>
+{/if}
+
+{#each Object.entries(wakeUpTimesByPeriod) as [period, times]}
+  <Section title={period}>
+    {#snippet content()}
+      <Timeline {times} />
+    {/snippet}
+  </Section>
+{/each}
