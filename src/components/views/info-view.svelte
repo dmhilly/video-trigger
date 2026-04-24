@@ -56,6 +56,8 @@
 
 {#each Object.entries(wakeUpTimesByPeriod) as [name, period]}
   <Section title={name}>
-    {#snippet content()}{/snippet}
+    {#snippet content()}
+      <Timeline events={period.events} start={period.start} end={period.end} />
+    {/snippet}
   </Section>
 {/each}
