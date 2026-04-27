@@ -8,12 +8,14 @@ import (
 	"time"
 
 	"go.viam.com/rdk/app"
+	"go.viam.com/rdk/components/sensor"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	generic "go.viam.com/rdk/services/generic"
 	"go.viam.com/rdk/services/video"
-	"go.viam.com/rdk/services/vision"
 )
+
+const prerollPadding = 5 * time.Second
 
 var (
 	GenericService   = resource.NewModel("devin-hilly", "video-trigger", "generic_service")
@@ -36,6 +38,9 @@ type Config struct {
 	Threshold          float64 `json:"threshold"`
 	CapturePaddingSecs float64 `json:"capture_padding_secs"` // seconds of video to include before and after the trigger event
 	UploadTabularData  bool    `json:"upload_tabular_data"`  // if true, upload each detection event to Viam's tabular data
+	Sensor       string `json:"sensor"`
+	VideoService string `json:"video_service"`
+	TriggerLabel string `json:"trigger_label"`
 }
 
 // Validate ensures all parts of the config are valid and important fields exist.
@@ -49,19 +54,17 @@ type Config struct {
 // (for example, "components.0"). You can use it in error messages
 // to indicate which resource has a problem.
 func (cfg *Config) Validate(path string) ([]string, []string, error) {
-	if cfg.VisionService == "" {
-		return nil, nil, fmt.Errorf("%s: vision_service is required", path)
+	if cfg.Sensor == "" {
+		return nil, nil, fmt.Errorf("%s: sensor is required", path)
 	}
 	if cfg.VideoService == "" {
 		return nil, nil, fmt.Errorf("%s: video_service is required", path)
-	}
-	if cfg.Camera == "" {
-		return nil, nil, fmt.Errorf("%s: camera is required", path)
 	}
 	if cfg.TriggerLabel == "" {
 		return nil, nil, fmt.Errorf("%s: trigger_label is required", path)
 	}
 	return []string{cfg.VisionService, cfg.VideoService}, nil, nil
+	return []string{cfg.Sensor, cfg.VideoService}, nil, nil
 }
 
 type videoTriggerGenericService struct {
@@ -69,11 +72,10 @@ type videoTriggerGenericService struct {
 
 	name resource.Name
 
-	logger     logging.Logger
-	cfg        *Config
-	visionSvc  vision.Service
-	videoSvc   video.Service
-	dataClient *app.DataClient
+	logger   logging.Logger
+	cfg      *Config
+	sensor   sensor.Sensor
+	videoSvc video.Service
 
 	cancelCtx  context.Context
 	cancelFunc func()
@@ -89,9 +91,9 @@ func newVideoTriggerGenericService(ctx context.Context, deps resource.Dependenci
 }
 
 func NewGenericService(ctx context.Context, deps resource.Dependencies, name resource.Name, conf *Config, logger logging.Logger) (resource.Resource, error) {
-	visionSvc, err := vision.FromDependencies(deps, conf.VisionService)
+	sensorComp, err := sensor.FromDependencies(deps, conf.Sensor)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vision service %q: %w", conf.VisionService, err)
+		return nil, fmt.Errorf("failed to get sensor %q: %w", conf.Sensor, err)
 	}
 
 	videoSvc, err := video.FromDependencies(deps, conf.VideoService)
@@ -115,7 +117,7 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 		name:       name,
 		logger:     logger,
 		cfg:        conf,
-		visionSvc:  visionSvc,
+		sensor:     sensorComp,
 		videoSvc:   videoSvc,
 		dataClient: dataClient,
 		cancelCtx:  cancelCtx,
@@ -132,64 +134,43 @@ func (s *videoTriggerGenericService) monitor() {
 	defer ticker.Stop()
 	endWindow := time.Now()
 
+	active := false
+	var startTime time.Time
+
 	for {
 		select {
 		case <-s.cancelCtx.Done():
 			return
 		case <-ticker.C:
-			detections, err := s.visionSvc.DetectionsFromCamera(s.cancelCtx, s.cfg.Camera, nil)
+			readings, err := s.sensor.Readings(s.cancelCtx, nil)
 			if err != nil {
-				s.logger.Warnf("failed to get detections from vision service: %v", err)
+				s.logger.Warnf("failed to get readings from sensor: %v", err)
 				continue
 			}
-			for _, d := range detections {
-				if d.Label() == s.cfg.TriggerLabel && d.Score() >= s.cfg.Threshold {
-					s.uploadDetection(d.Label(), d.Score())
-					if time.Now().Before(endWindow) {
-						break
-					}
-					padding := time.Duration(s.cfg.CapturePaddingSecs * float64(time.Second))
-					start := time.Now().Add(-padding).UTC().Format("2006-01-02_15-04-05Z")
-					endWindow = time.Now().Add(padding).UTC()
-					end := endWindow.Format("2006-01-02_15-04-05Z")
-					go s.processEvent(start, end, padding)
-					break
-				}
+
+			detected := false
+			if v, ok := readings[s.cfg.TriggerLabel].(bool); ok {
+				detected = v
+			}
+
+			if detected && !active {
+				active = true
+				startTime = time.Now().Add(-prerollPadding)
+			} else if !detected && active {
+				active = false
+				endTime := time.Now()
+				start := startTime.UTC().Format("2006-01-02_15-04-05Z")
+				end := endTime.UTC().Format("2006-01-02_15-04-05Z")
+				go s.processEvent(start, end, endTime)
 			}
 		}
 	}
 }
 
-func (s *videoTriggerGenericService) uploadDetection(label string, score float64) {
-	if s.dataClient == nil {
-		return
+func (s *videoTriggerGenericService) processEvent(start, end string, endTime time.Time) {
+	if wait := time.Until(endTime) + 45*time.Second; wait > 0 {
+		time.Sleep(wait)
 	}
-	now := time.Now()
-	data := []map[string]interface{}{
-		{
-			"label":     label,
-			"score":     score,
-			"camera":    s.cfg.Camera,
-			"timestamp": now.UTC().Format(time.RFC3339),
-		},
-	}
-	times := [][2]time.Time{{now, now}}
-	if _, err := s.dataClient.TabularDataCaptureUpload(
-		s.cancelCtx,
-		data,
-		os.Getenv("VIAM_MACHINE_PART_ID"),
-		"rdk:component:sensor",
-		s.name.ShortName(),
-		"Readings",
-		times,
-		nil,
-	); err != nil {
-		s.logger.Warnf("failed to upload tabular data: %v", err)
-	}
-}
-
-func (s *videoTriggerGenericService) processEvent(start, end string, padding time.Duration) {
-	time.Sleep(padding + (45 * time.Second))
 	if _, err := s.videoSvc.DoCommand(s.cancelCtx, map[string]interface{}{"command": "save", "from": start, "to": end}); err != nil {
 		s.logger.Warnf("failed to send DoCommand to video service: %v", err)
 	}
