@@ -6,15 +6,21 @@
     title: string;
     content: Snippet;
     class?: string;
+    contentClasses?: string;
   }
-  const { title, content, class: extraClasses }: Props = $props();
+  const {
+    title,
+    content,
+    class: extraClasses,
+    contentClasses,
+  }: Props = $props();
 </script>
 
 <div
   class={["flex flex-col gap-4 border p-4 bg-white rounded-xl", extraClasses]}
 >
   <Header text={title} variant="secondary" />
-  <div class="flex gap-2">
+  <div class={["flex gap-2", contentClasses]}>
     {@render content()}
   </div>
 </div>

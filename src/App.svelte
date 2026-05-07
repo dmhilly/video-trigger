@@ -51,12 +51,13 @@
 
   // video data
   const MAX_VIDEO_COUNT = 50;
-  let videos = $state<Video[]>([]);
-  let wakeUpTimes = $state<Date[]>([]);
   const filter = new VIAM.dataApi.Filter({
     mimeType: ["video/mp4"],
     tagsFilter: { tags: ["awake"] },
   });
+  let videos = $state<Video[]>([]);
+  let wakeUpTimes = $state<Date[]>([]);
+  let lastVideoFetch = $state<Date | undefined>(undefined);
 
   async function fetchVideos() {
     if (dataClient) {
@@ -78,6 +79,7 @@
       wakeUpTimes = videos
         .map((v) => v.timestamp?.toDate())
         .filter((d): d is Date => d !== undefined);
+      lastVideoFetch = new Date();
     }
   }
 
@@ -232,7 +234,12 @@
     {:else if view === Views.Info}
       <InfoView {dataClient} {wakeUpTimes} {videos} />
     {:else if view === Views.Videos}
-      <VideosView {dataClient} {videos} maxVideoCount={MAX_VIDEO_COUNT} />
+      <VideosView
+        {dataClient}
+        {videos}
+        maxVideoCount={MAX_VIDEO_COUNT}
+        {lastVideoFetch}
+      />
     {/if}
   </div>
 </div>

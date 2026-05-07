@@ -11,8 +11,9 @@
     dataClient: VIAM.DataClient | undefined;
     videos: Video[];
     maxVideoCount: number;
+    lastVideoFetch: Date | undefined;
   }
-  const { dataClient, videos, maxVideoCount }: Props = $props();
+  const { dataClient, videos, maxVideoCount, lastVideoFetch }: Props = $props();
 
   let videoCount = $derived(videos.length);
 
@@ -34,9 +35,12 @@
 </script>
 
 {#if dataClient}
-  <Section title="Wake Time Videos">
+  <Section title="Wake Time Videos" contentClasses="justify-between">
     {#snippet content()}
       Found {videoCount} video{videoCount === 1 ? "" : "s"}
+      <span class="text-subtle">
+        Last fetched at: <Datetime date={lastVideoFetch} />
+      </span>
     {/snippet}
   </Section>
   <div class="flex flex-col gap-4">
