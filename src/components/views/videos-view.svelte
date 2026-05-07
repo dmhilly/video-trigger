@@ -6,6 +6,8 @@
   import Section from "../section.svelte";
   import { formatFileSize } from "../../lib/helpers";
   import Datetime from "../datetime.svelte";
+  import IconButton from "../icon-button.svelte";
+  import Tooltip from "../tooltip.svelte";
 
   interface Props {
     dataClient: VIAM.DataClient | undefined;
@@ -17,10 +19,6 @@
 
   let videoCount = $derived(videos.length);
 
-  async function loadVideos() {
-    if (!dataClient) return;
-  }
-
   async function loadVideo(video: Video) {
     if (!dataClient) return;
     if (!video.url) {
@@ -28,10 +26,17 @@
         video.binaryDataId,
       );
     }
+  }
+  async function openVideo(video: Video) {
+    loadVideo(video);
     video.loaded = true;
   }
 
-  loadVideos();
+  async function downloadVideo(video: Video) {
+    await loadVideo(video);
+    if (!video.url) return;
+    window.open(video.url, "_blank");
+  }
 </script>
 
 {#if dataClient}
@@ -48,7 +53,7 @@
       <div
         class="flex flex-col bg-white gap-4 border rounded-xl p-4 items-start"
       >
-        <div class="flex flex-col gap-1">
+        <div class="flex gap-1 w-full justify-between items-center">
           <span>
             <Datetime
               date={video.timestamp?.toDate()}
@@ -56,7 +61,9 @@
             />
             · {formatFileSize(video.size)}
           </span>
-          <span>{video.name}</span>
+          <Tooltip text={video.name ?? ""}>
+            <IconButton icon="download" onclick={() => downloadVideo(video)} />
+          </Tooltip>
         </div>
         {#if video.loaded && video.url}
           <div class="flex flex-col gap-1">
@@ -80,7 +87,7 @@
         {:else}
           <Button
             text="Load video"
-            onclick={() => loadVideo(video)}
+            onclick={() => openVideo(video)}
             class="items-end"
           />
         {/if}
