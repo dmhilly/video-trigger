@@ -5,22 +5,31 @@
     text: string;
     position?: "top" | "bottom" | "left" | "right";
     delay?: number;
-    children: Snippet;
+    visible?: boolean;
+    class?: string;
+    children?: Snippet;
   }
-  const { text, position = "bottom", delay = 500, children }: Props = $props();
+  const {
+    text,
+    position = "bottom",
+    delay = 500,
+    visible: visibleProp,
+    class: extraClasses,
+    children,
+  }: Props = $props();
 
-  let visible = $state(false);
+  let internalVisible = $state(false);
   let timeout: ReturnType<typeof setTimeout>;
 
   function show() {
     timeout = setTimeout(() => {
-      visible = true;
+      internalVisible = true;
     }, delay);
   }
 
   function hide() {
     clearTimeout(timeout);
-    visible = false;
+    internalVisible = false;
   }
 
   const positionClasses: Record<string, string> = {
@@ -29,6 +38,10 @@
     left: "right-full top-1/2 -translate-y-1/2 mr-1",
     right: "left-full top-1/2 -translate-y-1/2 ml-1",
   };
+
+  const isVisible = $derived(
+    visibleProp !== undefined ? visibleProp : internalVisible,
+  );
 </script>
 
 <div
@@ -37,12 +50,13 @@
   onmouseenter={show}
   onmouseleave={hide}
 >
-  {@render children()}
-  {#if visible}
+  {@render children?.()}
+  {#if isVisible}
     <span
       class={[
         "absolute z-10 bg-gray-900 text-white text-xs rounded p-2 pointer-events-none",
         positionClasses[position],
+        extraClasses,
       ]}
     >
       {text}

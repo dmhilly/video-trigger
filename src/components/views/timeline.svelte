@@ -8,6 +8,7 @@
   import type { WakeUpEvent } from "./times";
   import type { Video } from "./video";
   import IconButton from "../icon-button.svelte";
+  import Tooltip from "../tooltip.svelte";
 
   interface Props {
     dataClient: DataClient | undefined;
@@ -57,57 +58,86 @@
 
     video = match;
   }
+
+  let hoveredEvent = $state<
+    { event: WakeUpEvent; xPercent: number } | undefined
+  >(undefined);
 </script>
 
 <div class="w-full flex flex-col gap-4">
-  <svg viewBox="0 0 {WIDTH} {HEIGHT}" class="w-full">
-    <rect
-      x={PAD.left}
-      y={BAR_Y}
-      width={chartW}
-      height={BAR_HEIGHT}
-      rx="4"
-      class="fill-gray-500"
-    />
-
-    {#each events as event}
-      {@const x1 = timeToX(event.start)}
-      {@const x2 = timeToX(event.end)}
+  <div class="relative">
+    <svg viewBox="0 0 {WIDTH} {HEIGHT}" class="w-full">
       <rect
-        x={x1}
+        x={PAD.left}
         y={BAR_Y}
-        width={Math.max(x2 - x1, 4)}
+        width={chartW}
         height={BAR_HEIGHT}
-        rx="2"
-        class="fill-white hover:cursor-pointer"
-        onclick={() => setVideo(event.start)}
+        rx="4"
+        class="fill-gray-500"
       />
-    {/each}
 
-    {#each ticks as tick, i}
-      {@const x = timeToX(tick)}
-      <line
-        x1={x}
-        y1={BAR_Y + BAR_HEIGHT}
-        x2={x}
-        y2={BAR_Y + BAR_HEIGHT + 4}
-        stroke="#666"
-      />
-      <text
-        {x}
-        y={HEIGHT - 2}
-        fill="#aaa"
-        font-size="10"
-        text-anchor={i === 0
-          ? "start"
-          : i === ticks.length - 1
-            ? "end"
-            : "middle"}
+      {#each events as event}
+        {@const x1 = timeToX(event.start)}
+        {@const x2 = timeToX(event.end)}
+        <rect
+          role="button"
+          x={x1}
+          y={BAR_Y}
+          width={Math.max(x2 - x1, 4)}
+          height={BAR_HEIGHT}
+          rx="2"
+          class="fill-white hover:cursor-pointer"
+          onclick={() => setVideo(event.start)}
+          onmouseenter={() =>
+            (hoveredEvent = {
+              event,
+              xPercent: ((x1 + Math.max(x2 - x1, 4) / 2) / WIDTH) * 100,
+            })}
+          onmouseleave={() => (hoveredEvent = undefined)}
+        />
+      {/each}
+
+      {#each ticks as tick, i}
+        {@const x = timeToX(tick)}
+        <line
+          x1={x}
+          y1={BAR_Y + BAR_HEIGHT}
+          x2={x}
+          y2={BAR_Y + BAR_HEIGHT + 4}
+          stroke="#666"
+        />
+        <text
+          {x}
+          y={HEIGHT - 2}
+          fill="#aaa"
+          font-size="10"
+          text-anchor={i === 0
+            ? "start"
+            : i === ticks.length - 1
+              ? "end"
+              : "middle"}
+        >
+          {toTimeString(tick)}
+        </text>
+      {/each}
+    </svg>
+
+    {#if hoveredEvent}
+      <div
+        class="absolute pointer-events-none top-3 translate-x-1/2"
+        style="left:{hoveredEvent.xPercent}%;"
       >
-        {toTimeString(tick)}
-      </text>
-    {/each}
-  </svg>
+        <Tooltip
+          text="{toTimeString(hoveredEvent.event.start)} – {toTimeString(
+            hoveredEvent.event.end,
+          )}"
+          visible={true}
+          position="top"
+          class="whitespace-nowrap"
+        />
+      </div>
+    {/if}
+  </div>
 
   {#if video && dataClient}
     <div class="flex flex-col gap-1">
