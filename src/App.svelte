@@ -223,6 +223,7 @@
 
     {#if view === Views.Camera}
       <CameraFeedView
+        {status}
         {mediaStream}
         {awakeData}
         {movementDetected}

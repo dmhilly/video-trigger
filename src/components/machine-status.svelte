@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Status } from "../lib/types";
+  import { Status, statusToVariant } from "../lib/types";
   import Badge from "./badge.svelte";
 
   interface Props {
@@ -8,16 +8,6 @@
     error?: string;
   }
   const { name, status, error }: Props = $props();
-
-  const statusToVariant: Record<
-    Status,
-    "warning" | "success" | "error" | "neutral"
-  > = {
-    [Status.Connecting]: "warning",
-    [Status.Connected]: "success",
-    [Status.Error]: "error",
-    [Status.Offline]: "neutral",
-  };
 </script>
 
 <div class="flex gap-3 border py-2 px-3 rounded-xl w-fit items-center">
