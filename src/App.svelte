@@ -25,98 +25,44 @@
   } = $props();
 
   const cameraName = "replay-camera";
-
-  let status = $state(Status.Connecting);
-  let error = $state("");
   let machineName = $state("");
   let robotClient = $state<VIAM.RobotClient | undefined>(undefined);
   let streamClient = $state<VIAM.StreamClient | undefined>(undefined);
   let dataClient = $state<VIAM.DataClient | undefined>(undefined);
   let mediaStream = $state<MediaStream | undefined>(undefined);
+  let viamClient: Awaited<ReturnType<typeof VIAM.createViamClient>>;
 
-  let awakeData = $state<VIAM.JsonValue>({});
-
-  let movementDetected = $state(false);
-  let lastMotionTime: Date | undefined = undefined;
-  let lastMotionLocal = $state<Date | undefined>(undefined);
-  const TWO_MINUTES = 2 * 60 * 1000;
-
-  const maxVideoCount = 50;
-  let videos = $state<Video[]>([]);
-  let wakeUpTimes = $state<Date[]>([]);
-
-  let pollInterval: ReturnType<typeof setInterval> | undefined;
-
-  const filter = new VIAM.dataApi.Filter({
-    mimeType: ["video/mp4"],
-    tagsFilter: { tags: ["awake"] },
-  });
-
-  const mqlQuery: Record<string, any>[] = [
-    {
-      $match: {
-        component_name: "awake_classifier",
-        component_type: "rdk:component:sensor",
-        method_name: "Readings",
-        "data.readings.is_awake": true,
-      },
-    },
-    {
-      $sort: { time_received: -1 },
-    },
-    {
-      $limit: 100,
-    },
-  ];
-
-  // reconnect options
+  // machine status
+  let status = $state(Status.Connecting);
+  let error = $state("");
+  // reconnect
   const MAX_DELAY = 60000;
   let retryDelay = 5000;
   let currentRetryTimeout: ReturnType<typeof setTimeout> | undefined;
   let retryListenersActive = false;
 
-  // Attempt connecting after resetting the retry delay
-  // Cancel background reconnect attempts when user's not connected or on tab
-  function handleRetryFromListener() {
-    if (document.hidden) {
-      if (currentRetryTimeout) clearTimeout(currentRetryTimeout);
-      return;
-    }
-    if (currentRetryTimeout) clearTimeout(currentRetryTimeout);
-    retryDelay = 5000;
-    connect();
-  }
+  // motion detection
+  const TWO_MINUTES = 2 * 60 * 1000;
+  let movementDetected = $state(false);
+  let lastMotionTime: Date | undefined = undefined;
+  let lastMotionLocal = $state<Date | undefined>(undefined);
+  let awakeData = $state<VIAM.JsonValue>({});
+  let pollInterval: ReturnType<typeof setInterval> | undefined;
 
-  // Set retry listeners for when user is moving tabs or changes connection
-  function setRetryListeners(active: boolean) {
-    if (active === retryListenersActive) return;
-    if (active) {
-      window.removeEventListener("online", handleRetryFromListener);
-      document.removeEventListener("visibilitychange", handleRetryFromListener);
-    } else {
-      window.addEventListener("online", handleRetryFromListener);
-      document.addEventListener("visibilitychange", handleRetryFromListener);
-    }
-    retryListenersActive = active;
-  }
+  // video data
+  const MAX_VIDEO_COUNT = 50;
+  let videos = $state<Video[]>([]);
+  let wakeUpTimes = $state<Date[]>([]);
+  const filter = new VIAM.dataApi.Filter({
+    mimeType: ["video/mp4"],
+    tagsFilter: { tags: ["awake"] },
+  });
 
-  async function connect() {
-    try {
-      status = Status.Connecting;
-
-      const viamClient = await VIAM.createViamClient({
-        serviceHost: "https://app.viam.com",
-        credentials: {
-          type: "api-key",
-          payload: apiKeySecret,
-          authEntity: apiKeyId,
-        },
-      });
-
-      dataClient = viamClient.dataClient;
+  async function fetchVideos() {
+    if (dataClient) {
       const { data } = await dataClient.binaryDataByFilter(
         filter,
-        maxVideoCount,
+        MAX_VIDEO_COUNT,
         VIAM.dataApi.Order.DESCENDING,
         undefined,
         false,
@@ -132,6 +78,77 @@
       wakeUpTimes = videos
         .map((v) => v.timestamp?.toDate())
         .filter((d): d is Date => d !== undefined);
+    }
+  }
+
+  function startPollingForData(robotClient: VIAM.RobotClient) {
+    const motionDetector = new VIAM.VisionClient(
+      robotClient,
+      "motion-detector",
+    );
+    const awakeClassifier = new VIAM.SensorClient(
+      robotClient,
+      "awake-classifier",
+    );
+    let polling = false;
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+      if (polling) return;
+      polling = true;
+      try {
+        const [motionResults, awakeResult] = await Promise.all([
+          motionDetector.getClassificationsFromCamera(cameraName, 1),
+          awakeClassifier.getReadings(),
+        ]);
+        awakeData = awakeResult;
+
+        if (motionResults.length > 0 && motionResults[0].confidence > 0.001) {
+          lastMotionTime = new Date();
+          lastMotionLocal = lastMotionTime;
+          movementDetected = true;
+        } else if (
+          movementDetected &&
+          lastMotionTime &&
+          Date.now() - lastMotionTime.getTime() >= TWO_MINUTES
+        ) {
+          movementDetected = false;
+        }
+      } catch (err) {
+        console.error("Detection error:", err);
+      } finally {
+        polling = false;
+      }
+    }, 500);
+  }
+
+  // Set retry listeners for when user is moving tabs or changes connection
+  function setRetryListeners(active: boolean) {
+    if (active === retryListenersActive) return;
+    if (active) {
+      window.addEventListener("online", handleRetryFromListener);
+      document.addEventListener("visibilitychange", handleRetryFromListener);
+    } else {
+      window.removeEventListener("online", handleRetryFromListener);
+      document.removeEventListener("visibilitychange", handleRetryFromListener);
+    }
+    retryListenersActive = active;
+  }
+
+  // Attempt connecting after resetting the retry delay
+  // Cancel background reconnect attempts when user's not connected or on tab
+  function handleRetryFromListener() {
+    if (document.hidden) {
+      if (currentRetryTimeout) clearTimeout(currentRetryTimeout);
+      return;
+    }
+    if (currentRetryTimeout) clearTimeout(currentRetryTimeout);
+    retryDelay = 5000;
+    connect();
+  }
+
+  async function connect() {
+    try {
+      status = Status.Connecting;
 
       const machine = await viamClient.appClient.getRobot(machineId);
       machineName = machine?.name ?? "";
@@ -159,48 +176,10 @@
         VIAM.MachineConnectionEvent.CONNECTED,
         () => (status = Status.Connected),
       );
+      startPollingForData(robotClient);
 
       streamClient = new VIAM.StreamClient(robotClient);
       mediaStream = await streamClient.getStream(cameraName);
-
-      const motionDetector = new VIAM.VisionClient(
-        robotClient,
-        "motion-detector",
-      );
-      const awakeClassifier = new VIAM.SensorClient(
-        robotClient,
-        "awake-classifier",
-      );
-
-      let polling = false;
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(async () => {
-        if (polling) return;
-        polling = true;
-        try {
-          const [motionResults, awakeResult] = await Promise.all([
-            motionDetector.getClassificationsFromCamera(cameraName, 1),
-            awakeClassifier.getReadings(),
-          ]);
-          awakeData = awakeResult;
-
-          if (motionResults.length > 0 && motionResults[0].confidence > 0.001) {
-            lastMotionTime = new Date();
-            lastMotionLocal = lastMotionTime;
-            movementDetected = true;
-          } else if (
-            movementDetected &&
-            lastMotionTime &&
-            Date.now() - lastMotionTime.getTime() >= TWO_MINUTES
-          ) {
-            movementDetected = false;
-          }
-        } catch (err) {
-          console.error("Detection error:", err);
-        } finally {
-          polling = false;
-        }
-      }, 500);
     } catch (err) {
       status = Status.Error;
       error = `${err}`;
@@ -210,13 +189,27 @@
     }
   }
 
-  connect();
+  async function init() {
+    viamClient = await VIAM.createViamClient({
+      serviceHost: "https://app.viam.com",
+      credentials: {
+        type: "api-key",
+        payload: apiKeySecret,
+        authEntity: apiKeyId,
+      },
+    });
+
+    dataClient = viamClient.dataClient;
+    await fetchVideos();
+    setInterval(fetchVideos, 60000);
+
+    connect();
+  }
+
+  init();
 
   let view: Views = $state(Views.Info);
-
-  const selectTab = (newView: Views) => {
-    view = newView;
-  };
+  const selectTab = (newView: Views) => (view = newView);
 </script>
 
 <div class="min-h-screen bg-linear-to-b from-blue-50 to-pink-50">
@@ -238,7 +231,7 @@
     {:else if view === Views.Info}
       <InfoView {dataClient} {wakeUpTimes} {videos} />
     {:else if view === Views.Videos}
-      <VideosView {dataClient} {videos} {maxVideoCount} />
+      <VideosView {dataClient} {videos} maxVideoCount={MAX_VIDEO_COUNT} />
     {/if}
   </div>
 </div>
