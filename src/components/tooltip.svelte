@@ -32,7 +32,7 @@
 </script>
 
 <div
-  class="relative group inline-block"
+  class="relative flex items-center"
   role="tooltip"
   onmouseenter={show}
   onmouseleave={hide}

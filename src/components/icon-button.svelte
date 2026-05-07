@@ -5,11 +5,17 @@
   interface Props {
     icon: string;
     onclick?: () => void;
+    size?: Size;
     class?: string;
   }
-  const { icon, onclick, class: extraClasses }: Props = $props();
+  const {
+    icon,
+    onclick,
+    size = Size.Small,
+    class: extraClasses,
+  }: Props = $props();
 </script>
 
 <button {onclick} class={["hover:cursor-pointer", extraClasses]}>
-  <Icon name={icon} size={Size.Small} />
+  <Icon name={icon} {size} />
 </button>

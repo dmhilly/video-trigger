@@ -1,9 +1,13 @@
 <script lang="ts">
   import type { DataClient } from "@viamrobotics/sdk";
+
   import { toTimeString } from "../../lib/helpers";
+  import { Size } from "../../lib/types";
+  import Button from "../button.svelte";
+  import DownloadButton from "./download-button.svelte";
   import type { WakeUpEvent } from "./times";
   import type { Video } from "./video";
-  import Button from "../button.svelte";
+  import IconButton from "../icon-button.svelte";
 
   interface Props {
     dataClient: DataClient | undefined;
@@ -34,7 +38,7 @@
     return Array.from({ length: count }, (_, i) => new Date(minT + step * i));
   });
 
-  let videoURL = $state("");
+  let video = $state<Video | undefined>(undefined);
   async function setVideo(eventStart: Date) {
     if (!dataClient) return;
     const match = videos.find((v) => {
@@ -51,7 +55,7 @@
       );
     }
 
-    videoURL = match.url;
+    video = match;
   }
 </script>
 
@@ -105,15 +109,17 @@
     {/each}
   </svg>
 
-  {#if videoURL}
+  {#if video && dataClient}
     <div class="flex flex-col gap-1">
-      <Button
-        text="Close"
-        icon="close"
-        onclick={() => (videoURL = "")}
-        class="self-end"
-      />
-      <video src={videoURL} controls class="w-full rounded">
+      <div class="self-end flex items-center">
+        <DownloadButton {dataClient} {video} />
+        <IconButton
+          icon="close"
+          size={Size.Medium}
+          onclick={() => (video = undefined)}
+        />
+      </div>
+      <video src={video.url} controls class="w-full rounded">
         <track kind="captions" />
       </video>
     </div>

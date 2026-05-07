@@ -6,8 +6,9 @@
   import Section from "../section.svelte";
   import { formatFileSize } from "../../lib/helpers";
   import Datetime from "../datetime.svelte";
+  import DownloadButton from "./download-button.svelte";
   import IconButton from "../icon-button.svelte";
-  import Tooltip from "../tooltip.svelte";
+  import { Size } from "../../lib/types";
 
   interface Props {
     dataClient: VIAM.DataClient | undefined;
@@ -30,12 +31,6 @@
   async function openVideo(video: Video) {
     loadVideo(video);
     video.loaded = true;
-  }
-
-  async function downloadVideo(video: Video) {
-    await loadVideo(video);
-    if (!video.url) return;
-    window.open(video.url, "_blank");
   }
 </script>
 
@@ -61,29 +56,28 @@
             />
             · {formatFileSize(video.size)}
           </span>
-          <Tooltip text={video.name ?? ""}>
-            <IconButton icon="download" onclick={() => downloadVideo(video)} />
-          </Tooltip>
+          <div class="flex items-center">
+            <DownloadButton {dataClient} {video} />
+            {#if video.loaded && video.url}
+              <IconButton
+                icon="close"
+                size={Size.Medium}
+                onclick={() => (video.loaded = false)}
+              />
+            {/if}
+          </div>
         </div>
         {#if video.loaded && video.url}
-          <div class="flex flex-col gap-1">
-            <Button
-              text="Close"
-              icon="close"
-              onclick={() => (video.loaded = false)}
-              class="self-end"
-            />
-            <video
-              src={video.url}
-              controls
-              class="w-full"
-              oncanplay={() => {
-                video.loaded = true;
-              }}
-            >
-              <track kind="captions" />
-            </video>
-          </div>
+          <video
+            src={video.url}
+            controls
+            class="w-full"
+            oncanplay={() => {
+              video.loaded = true;
+            }}
+          >
+            <track kind="captions" />
+          </video>
         {:else}
           <Button
             text="Load video"
