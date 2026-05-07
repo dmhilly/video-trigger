@@ -69,6 +69,37 @@
     },
   ];
 
+  // reconnect options
+  const MAX_DELAY = 60000;
+  let retryDelay = 5000;
+  let currentRetryTimeout: ReturnType<typeof setTimeout> | undefined;
+  let retryListenersActive = false;
+
+  // Attempt connecting after resetting the retry delay
+  // Cancel background reconnect attempts when user's not connected or on tab
+  function handleRetryFromListener() {
+    if (document.hidden) {
+      if (currentRetryTimeout) clearTimeout(currentRetryTimeout);
+      return;
+    }
+    if (currentRetryTimeout) clearTimeout(currentRetryTimeout);
+    retryDelay = 5000;
+    connect();
+  }
+
+  // Set retry listeners for when user is moving tabs or changes connection
+  function setRetryListeners(active: boolean) {
+    if (active === retryListenersActive) return;
+    if (active) {
+      window.removeEventListener("online", handleRetryFromListener);
+      document.removeEventListener("visibilitychange", handleRetryFromListener);
+    } else {
+      window.addEventListener("online", handleRetryFromListener);
+      document.addEventListener("visibilitychange", handleRetryFromListener);
+    }
+    retryListenersActive = active;
+  }
+
   async function connect() {
     try {
       status = Status.Connecting;
@@ -107,16 +138,20 @@
 
       if (machine?.onlineState === 2) {
         status = Status.Offline;
-        setTimeout(connect, 5000);
+        currentRetryTimeout = setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, MAX_DELAY);
+        setRetryListeners(true);
         return;
       }
+
+      retryDelay = 5000;
+      setRetryListeners(false);
 
       // Connect directly to the machine (not the app API)
       robotClient = await viamClient.connectToMachine({ host });
       status = Status.Connected;
 
       robotClient?.on(VIAM.MachineConnectionEvent.DISCONNECTED, () => {
-        setTimeout(connect, 5000);
         status = Status.Offline;
       });
 
@@ -169,7 +204,9 @@
     } catch (err) {
       status = Status.Error;
       error = `${err}`;
-      setTimeout(connect, 5000);
+      currentRetryTimeout = setTimeout(connect, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, MAX_DELAY);
+      setRetryListeners(true);
     }
   }
 
