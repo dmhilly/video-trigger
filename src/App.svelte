@@ -4,7 +4,7 @@
   import Heading from "./components/heading.svelte";
   import MachineStatus from "./components/machine-status.svelte";
   import CameraFeedView from "./components/views/camera-feed-view.svelte";
-  import InfoView from "./components/views/info-view.svelte";
+  import DashboardView from "./components/views/dashboard-view.svelte";
   import type { Video } from "./components/views/video";
   import VideosView from "./components/views/videos-view.svelte";
   import { Views } from "./components/views/views";
@@ -212,14 +212,16 @@
 
   init();
 
-  let view: Views = $state(Views.Info);
+  let view: Views = $state(Views.Dashboard);
   const selectTab = (newView: Views) => (view = newView);
 </script>
 
 <div class="min-h-screen bg-blue-100">
   <div class="p-8 mx-auto flex flex-col gap-8 max-w-272">
-    <div class="flex gap-4 items-center justify-between">
-      <Heading text="Baby Dashboard" />
+    <div
+      class="flex gap-4 items-center justify-between border-b-2 border-pink-300 pb-4"
+    >
+      <Heading text="Baby Monitor" />
       <MachineStatus name={machineName} {status} {error} />
     </div>
 
@@ -234,8 +236,8 @@
             {movementDetected}
             {lastMotionLocal}
           />
-        {:else if view === Views.Info}
-          <InfoView {dataClient} {wakeUpTimes} {videos} />
+        {:else if view === Views.Dashboard}
+          <DashboardView {dataClient} {wakeUpTimes} {videos} />
         {:else if view === Views.Videos}
           <VideosView
             {dataClient}

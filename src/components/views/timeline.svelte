@@ -73,7 +73,7 @@
         width={chartW}
         height={BAR_HEIGHT}
         rx="4"
-        class="fill-gray-500"
+        class="fill-gray-400"
       />
 
       {#each events as event}
@@ -108,8 +108,8 @@
         />
         <text
           {x}
-          y={HEIGHT - 2}
-          fill="#aaa"
+          y={HEIGHT - 15}
+          fill="#444"
           font-size="10"
           text-anchor={i === 0
             ? "start"

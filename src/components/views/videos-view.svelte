@@ -37,7 +37,9 @@
 {#if dataClient}
   <Section title="Wake Time Videos" contentClasses="justify-between">
     {#snippet content()}
-      Found {videoCount} video{videoCount === 1 ? "" : "s"}
+      <span class="text-subtle">
+        Found {videoCount} video{videoCount === 1 ? "" : "s"}
+      </span>
       <span class="text-subtle">
         Last fetched at: <Datetime date={lastVideoFetch} />
       </span>

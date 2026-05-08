@@ -9,12 +9,12 @@
   const { onselect, selected }: Props = $props();
 </script>
 
-<div class="flex flex-col gap-2 bg-white p-2 h-fit rounded-2xl">
+<div class="flex flex-col gap-2 bg-white p-2 h-fit rounded-2xl w-45">
   <ViewTab
-    text="Info"
+    text="Dashboard"
     icon="info"
-    selected={selected === Views.Info}
-    onclick={() => onselect(Views.Info)}
+    selected={selected === Views.Dashboard}
+    onclick={() => onselect(Views.Dashboard)}
   />
   <ViewTab
     text="Camera"

@@ -35,7 +35,7 @@
   const babyStatus = $derived(awakeData as Record<string, any>);
 </script>
 
-<Section title="Camera feed:">
+<Section title="Camera Feed">
   {#snippet content()}
     {#if status === Status.Connected}
       <video

@@ -1,5 +1,5 @@
 export enum Views {
   Camera = "Camera",
-  Info = "Info",
+  Dashboard = "Dashboard",
   Videos = "Videos",
 }

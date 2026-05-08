@@ -59,9 +59,12 @@
 {/if}
 
 {#each Object.entries(wakeUpTimesByPeriod) as [name, period]}
+  {@const isNight = name.includes("night")}
   <Section
     title={name}
-    class={name.includes("night") ? "bg-purple-100!" : "bg-yellow-50!"}
+    class={isNight ? "bg-indigo-200!" : "bg-yellow-50!"}
+    icon={isNight ? "moon" : "sun"}
+    iconClass={isNight ? "text-indigo-700" : "text-yellow-500"}
   >
     {#snippet content()}
       <Timeline

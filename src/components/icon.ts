@@ -13,6 +13,8 @@ export const IconByName: Record<string, Icon> = {
     "baseline-file-download"
   ],
   info: (IC as { icons: Record<string, Icon> }).icons["round-info"],
+  moon: (IC as { icons: Record<string, Icon> }).icons["baseline-dark-mode"],
+  sun: (IC as { icons: Record<string, Icon> }).icons["baseline-light-mode"],
   video: (IC as { icons: Record<string, Icon> }).icons[
     "baseline-video-library"
   ],
