@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
+	"go.viam.com/rdk/app"
 	"go.viam.com/rdk/components/sensor"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
@@ -29,6 +31,13 @@ func init() {
 }
 
 type Config struct {
+	VisionService      string  `json:"vision_service"`
+	VideoService       string  `json:"video_service"`
+	Camera             string  `json:"camera"`
+	TriggerLabel       string  `json:"trigger_label"` // detection label that triggers video capture (e.g. "red", "person")
+	Threshold          float64 `json:"threshold"`
+	CapturePaddingSecs float64 `json:"capture_padding_secs"` // seconds of video to include before and after the trigger event
+	UploadTabularData  bool    `json:"upload_tabular_data"`  // if true, upload each detection event to Viam's tabular data
 	Sensor       string `json:"sensor"`
 	VideoService string `json:"video_service"`
 	TriggerLabel string `json:"trigger_label"`
@@ -54,6 +63,7 @@ func (cfg *Config) Validate(path string) ([]string, []string, error) {
 	if cfg.TriggerLabel == "" {
 		return nil, nil, fmt.Errorf("%s: trigger_label is required", path)
 	}
+	return []string{cfg.VisionService, cfg.VideoService}, nil, nil
 	return []string{cfg.Sensor, cfg.VideoService}, nil, nil
 }
 
@@ -93,12 +103,23 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 
+	var dataClient *app.DataClient
+	if conf.UploadTabularData {
+		viamClient, err := app.CreateViamClientFromEnvVars(ctx, nil, logger)
+		if err != nil {
+			logger.Warnf("failed to create Viam client for tabular data upload: %v", err)
+		} else {
+			dataClient = viamClient.DataClient()
+		}
+	}
+
 	s := &videoTriggerGenericService{
 		name:       name,
 		logger:     logger,
 		cfg:        conf,
 		sensor:     sensorComp,
 		videoSvc:   videoSvc,
+		dataClient: dataClient,
 		cancelCtx:  cancelCtx,
 		cancelFunc: cancelFunc,
 	}
@@ -111,6 +132,7 @@ func NewGenericService(ctx context.Context, deps resource.Dependencies, name res
 func (s *videoTriggerGenericService) monitor() {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
+	endWindow := time.Now()
 
 	active := false
 	var startTime time.Time

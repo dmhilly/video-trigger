@@ -2,17 +2,25 @@
   "name": "video-trigger",
   "description": "a dashboard to manage video files based on specific triggers",
   "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
     "start": "esbuild ./main.ts --bundle --outfile=static/main.js --servedir=static --format=esm",
     "build": "esbuild ./main.ts --bundle --outfile=static/main.js --format=esm"
   },
   "author": "<YOUR NAME>",
   "license": "ISC",
   "dependencies": {
+    "@iconify-json/ic": "^1.2.4",
+    "@tailwindcss/vite": "^4.2.2",
     "@viamrobotics/sdk": "^0.68.0",
-    "js-cookie": "^3.0.5"
+    "js-cookie": "^3.0.5",
+    "svelte": "^5.55.2",
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@types/js-cookie": "^3.0.6",
+    "vite": "^8.0.8",
     "esbuild": "^0.27.4"
   }
 }

@@ -35,3 +35,7 @@ reload-*/
 
 # Node modules
 node_modules/
+
+# App files
+static/
+.env.local
