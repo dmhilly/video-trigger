@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as VIAM from "@viamrobotics/sdk";
 
-  import Header from "./components/header.svelte";
+  import Heading from "./components/heading.svelte";
   import MachineStatus from "./components/machine-status.svelte";
   import CameraFeedView from "./components/views/camera-feed-view.svelte";
   import InfoView from "./components/views/info-view.svelte";
@@ -216,32 +216,35 @@
   const selectTab = (newView: Views) => (view = newView);
 </script>
 
-<div class="min-h-screen bg-blue-50">
-  <div class="p-8 mx-auto flex flex-col gap-8 max-w-228">
+<div class="min-h-screen bg-blue-100">
+  <div class="p-8 mx-auto flex flex-col gap-8 max-w-272">
     <div class="flex gap-4 items-center justify-between">
-      <Header text="Baby Dashboard" />
+      <Heading text="Baby Dashboard" />
       <MachineStatus name={machineName} {status} {error} />
     </div>
 
-    <ViewsTabSection onselect={selectTab} selected={view} />
-
-    {#if view === Views.Camera}
-      <CameraFeedView
-        {status}
-        {mediaStream}
-        {awakeData}
-        {movementDetected}
-        {lastMotionLocal}
-      />
-    {:else if view === Views.Info}
-      <InfoView {dataClient} {wakeUpTimes} {videos} />
-    {:else if view === Views.Videos}
-      <VideosView
-        {dataClient}
-        {videos}
-        maxVideoCount={MAX_VIDEO_COUNT}
-        {lastVideoFetch}
-      />
-    {/if}
+    <div class="flex gap-8">
+      <ViewsTabSection onselect={selectTab} selected={view} />
+      <div class="flex flex-col flex-1 gap-8">
+        {#if view === Views.Camera}
+          <CameraFeedView
+            {status}
+            {mediaStream}
+            {awakeData}
+            {movementDetected}
+            {lastMotionLocal}
+          />
+        {:else if view === Views.Info}
+          <InfoView {dataClient} {wakeUpTimes} {videos} />
+        {:else if view === Views.Videos}
+          <VideosView
+            {dataClient}
+            {videos}
+            maxVideoCount={MAX_VIDEO_COUNT}
+            {lastVideoFetch}
+          />
+        {/if}
+      </div>
+    </div>
   </div>
 </div>

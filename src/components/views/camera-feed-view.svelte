@@ -3,7 +3,7 @@
   import InfoList from "../info-list.svelte";
   import { Status, statusToVariant } from "../../lib/types";
   import Section from "../section.svelte";
-  import Header from "../header.svelte";
+  import Heading from "../heading.svelte";
   import Badge from "../badge.svelte";
 
   interface Props {
@@ -58,7 +58,7 @@
       <div
         class="bg-gray-200 py-10 rounded-2xl w-full flex flex-col gap-2 items-center"
       >
-        <Header text="Camera feed not available." variant="secondary" />
+        <Heading text="Camera feed not available." variant="secondary" />
         <div>
           <span>Machine Status:</span>
           <Badge text={status} variant={statusToVariant[status]} />

@@ -12,12 +12,11 @@
 
 <button
   class={[
-    "h-18 w-18 rounded-xl flex flex-col gap-1 items-center justify-center hover:cursor-pointer shadow-lg",
+    "h-9 w-36 p-4 rounded-xl flex gap-1 items-center justify-start hover:cursor-pointer",
     { "bg-black text-white": selected },
     { "bg-white": !selected },
   ]}
   {onclick}
 >
-  <Icon name={icon} />
-  <span>{text}</span>
+  <Icon name={icon} /> <span>{text}</span>
 </button>
