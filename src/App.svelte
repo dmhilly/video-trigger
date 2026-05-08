@@ -102,6 +102,7 @@
           motionDetector.getClassificationsFromCamera(cameraName, 1),
           awakeClassifier.getReadings(),
         ]);
+        console.log(motionResults, awakeData);
         awakeData = awakeResult;
 
         if (motionResults.length > 0 && motionResults[0].confidence > 0.001) {
@@ -163,7 +164,6 @@
         return;
       }
 
-      retryDelay = 5000;
       setRetryListeners(false);
 
       // Connect directly to the machine (not the app API)
@@ -182,12 +182,14 @@
 
       streamClient = new VIAM.StreamClient(robotClient);
       mediaStream = await streamClient.getStream(cameraName);
+
+      retryDelay = 5000;
     } catch (err) {
       status = Status.Error;
       error = `${err}`;
       currentRetryTimeout = setTimeout(connect, retryDelay);
-      retryDelay = Math.min(retryDelay * 2, MAX_DELAY);
       setRetryListeners(true);
+      retryDelay = Math.min(retryDelay * 2, MAX_DELAY);
     }
   }
 
@@ -214,7 +216,7 @@
   const selectTab = (newView: Views) => (view = newView);
 </script>
 
-<div class="min-h-screen bg-linear-to-b from-blue-50 to-pink-50">
+<div class="min-h-screen bg-blue-50">
   <div class="p-8 mx-auto flex flex-col gap-8 max-w-228">
     <div class="flex gap-4 items-center justify-between">
       <Header text="Baby Dashboard" />

@@ -16,9 +16,7 @@
   }: Props = $props();
 </script>
 
-<div
-  class={["flex flex-col gap-4 border p-4 bg-white rounded-xl", extraClasses]}
->
+<div class={["flex flex-col gap-4  p-4 bg-white rounded-xl", extraClasses]}>
   <Header text={title} variant="secondary" />
   <div class={["flex gap-2", contentClasses]}>
     {@render content()}

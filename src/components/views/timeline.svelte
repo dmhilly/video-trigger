@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { DataClient } from "@viamrobotics/sdk";
 
-  import { toTimeString } from "../../lib/helpers";
+  import { toTimeHourString, toTimeString } from "../../lib/helpers";
   import { Size } from "../../lib/types";
   import Button from "../button.svelte";
   import DownloadButton from "./download-button.svelte";
@@ -117,7 +117,7 @@
               ? "end"
               : "middle"}
         >
-          {toTimeString(tick)}
+          {toTimeHourString(tick)}
         </text>
       {/each}
     </svg>

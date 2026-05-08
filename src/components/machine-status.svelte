@@ -10,7 +10,7 @@
   const { name, status, error }: Props = $props();
 </script>
 
-<div class="flex gap-3 border py-2 px-3 rounded-xl w-fit items-center">
+<div class="flex gap-3 bg-white py-2 px-3 rounded-xl w-fit items-center">
   <div class="flex gap-1 items-center">
     <span>Machine: </span>
     <Badge text={name == "" ? "-" : name} variant="neutral" />

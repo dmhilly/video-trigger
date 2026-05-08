@@ -45,9 +45,7 @@
   </Section>
   <div class="flex flex-col gap-4">
     {#each videos as video}
-      <div
-        class="flex flex-col bg-white gap-4 border rounded-xl p-4 items-start"
-      >
+      <div class="flex flex-col bg-white gap-4 rounded-xl p-4 items-start">
         <div class="flex gap-1 w-full justify-between items-center">
           <span>
             <Datetime

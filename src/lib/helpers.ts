@@ -28,6 +28,11 @@ export function toDateString(date: Date | undefined): string {
   });
 }
 
+export function toTimeHourString(date: Date | undefined): string {
+  if (date === undefined) return "";
+  return date.toLocaleTimeString("en-US", { hour: "numeric" });
+}
+
 export function toTimeString(date: Date | undefined): string {
   if (date === undefined) return "";
   return date.toLocaleTimeString("en-US", {
