@@ -13,8 +13,8 @@
 <button
   class={[
     "h-9 w-full p-4 rounded-xl flex gap-1 items-center justify-start hover:cursor-pointer",
-    { "bg-black text-white": selected },
-    { "bg-white": !selected },
+    { "bg-gray-700 text-white": selected },
+    { "bg-white text-gray-700": !selected },
   ]}
   {onclick}
 >

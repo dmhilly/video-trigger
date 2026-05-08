@@ -21,7 +21,7 @@
 
   const WIDTH = 600;
   const HEIGHT = 60;
-  const PAD = { left: 10, right: 10 };
+  const PAD = { left: 25, right: 25 };
   const chartW = WIDTH - PAD.left - PAD.right;
   const BAR_HEIGHT = 20;
   const BAR_Y = 10;

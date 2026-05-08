@@ -21,8 +21,8 @@
   }: Props = $props();
 </script>
 
-<div class={["flex flex-col gap-4  p-4 bg-white rounded-xl", extraClasses]}>
-  <div class="flex gap-2">
+<div class={["flex flex-col gap-4 p-4 bg-white rounded-xl", extraClasses]}>
+  <div class="flex gap-2 items-center">
     {#if icon}<Icon name={icon} class={iconClass} />{/if}
     <Heading text={title} variant="secondary" />
   </div>
